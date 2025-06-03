@@ -277,7 +277,7 @@ export default function Home() {
           variants={estudiantesTextVariants} 
           animate={isMounted ? ["visible", "shimmer", "glow"] : "hidden"}
         >
-          PERFILUAM
+          PERFIL-UAM
         </motion.h1>
         <motion.h2
           className="text-orange-500 text-lg sm:text-xl md:text-3xl lg:text-4xl xl:text-5xl font-heading font-bold mb-2 sm:mb-3 lg:mb-4"
