@@ -1,17 +1,12 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion"; // Import motion
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isMounted, setIsMounted] = useState(false);
-  const [videoLoaded, setVideoLoaded] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true); // Trigger animations
-
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -30,27 +25,24 @@ export default function Home() {
       r: Math.random() * 1.2 + 0.5,
       dx: (Math.random() - 0.5) * 0.4,
       dy: (Math.random() - 0.5) * 0.4,
-      opacity: Math.random() * 0.5 + 0.5, // This is the original opacity, not directly used for fillStyle now
-      baseOpacity: Math.random() * 0.3 + 0.2, // Base opacity for pulsing
-      pulseSpeed: Math.random() * 0.02 + 0.005, // Individual pulse speed
-      pulseOffset: Math.random() * Math.PI * 2, // Random start for pulse
+      opacity: Math.random() * 0.5 + 0.5,
+      baseOpacity: Math.random() * 0.3 + 0.2,
+      pulseSpeed: Math.random() * 0.02 + 0.005,
+      pulseOffset: Math.random() * Math.PI * 2,
     }));
 
     let frame = 0;
     function draw() {
+      if (!ctx) return;
       ctx.clearRect(0, 0, width, height);
-      // Removed: ctx.fillStyle = "black"; 
-      // Removed: ctx.fillRect(0, 0, width, height);
       frame++;
-
       for (const p of particles) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, 2 * Math.PI);
-        // Pulsating opacity
         const currentPulseOpacity = p.baseOpacity + (Math.sin(frame * p.pulseSpeed + p.pulseOffset) * p.baseOpacity * 0.8);
-        ctx.fillStyle = `rgba(255,255,255,${Math.max(0, Math.min(1, currentPulseOpacity))})`; 
-        ctx.shadowColor = "rgba(255,255,255,0.3)"; // Brighter shadow for white particles on black
-        ctx.shadowBlur = 8; // Slightly increased blur
+        ctx.fillStyle = `rgba(255,255,255,${Math.max(0, Math.min(1, currentPulseOpacity))})`;
+        ctx.shadowColor = "rgba(255,255,255,0.4)";
+        ctx.shadowBlur = 12;
         ctx.fill();
         ctx.closePath();
 
@@ -71,7 +63,6 @@ export default function Home() {
         canvas.width = width;
         canvas.height = height;
       }
-      // Re-initialize particle positions if needed, or adjust existing ones
       particles.forEach(p => {
         p.x = Math.random() * width;
         p.y = Math.random() * height;
@@ -85,118 +76,8 @@ export default function Home() {
     };
   }, []);
 
-  // Animation Variants
-  const logoVariants = {
-    hidden: { opacity: 0, x: -30 },
-    visible: {
-      opacity: 1,
-      x: 0,
-      transition: { duration: 0.7, ease: "easeOut", delay: 0.1 }, 
-    },
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0 }, // Only controls the container's initial opacity if needed
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2, // Stagger direct children of this container
-        delayChildren: 0.3, 
-      },
-    },
-  };
-
-  const estudiantesTextVariants = { 
-    hidden: { opacity: 0, y: 20, scale: 0.98 }, 
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: { duration: 0.6, ease: "circOut" }, 
-    },
-    shimmer: {
-      backgroundPosition: ["200% center", "-200% center"],
-      transition: {
-        duration: 3.0,
-        repeat: Infinity,
-        ease: "linear",
-      }
-    },
-    glow: {
-      textShadow: [
-        '4px 4px 12px rgba(0,0,0,0.8), 2px 2px 6px rgba(0,0,0,0.6), 0 0 20px rgba(255,255,255,0.3), 0 0 40px rgba(255,255,255,0.1)',
-        '4px 4px 12px rgba(0,0,0,0.8), 2px 2px 6px rgba(0,0,0,0.6), 0 0 30px rgba(255,255,255,0.5), 0 0 60px rgba(255,255,255,0.2)',
-        '4px 4px 12px rgba(0,0,0,0.8), 2px 2px 6px rgba(0,0,0,0.6), 0 0 20px rgba(255,255,255,0.3), 0 0 40px rgba(255,255,255,0.1)'
-      ],
-      transition: {
-        duration: 2.5,
-        repeat: Infinity,
-        ease: "easeInOut",
-      }
-    }
-  };
-
-  const itemVariants = { // This will be used by P, and the divisions container
-    hidden: { opacity: 0, y: 20, scale: 0.98 }, 
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: { duration: 0.6, ease: "circOut" }, 
-    },
-  };
-
-  const uamTextVariants = { // Kept separate for the pulse effect, but entry is similar to itemVariants
-    hidden: { opacity: 0, y: 20, scale: 0.98 }, 
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: { duration: 0.6, ease: "circOut" },
-    },
-  };
-  
-  const barVariants = {
-    hidden: { opacity: 0, width: 0, scaleX: 0.5 }, 
-    visible: {
-      opacity: 1,
-      width: "24rem", 
-      scaleX: 1,
-      transition: { duration: 0.6, ease: "circOut" }, 
-    },
-  };
-
-  // divisionItemVariants will animate each division block (icon + text) as one unit.
-  // The container of these three items will use itemVariants to be part of the main stagger.
-  const divisionItemVariants = { 
-    hidden: { opacity: 0, y: 20, scale: 0.95 }, 
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: { duration: 0.5, ease: "circOut" }, 
-    },
-    hover: { // Optional: add hover effect
-      scale: 1.05,
-      transition: { duration: 0.3 }
-    },
-  };
-
-  // New variant for the container of the three division columns
-  // This allows the three columns themselves to be staggered
-  const divisionsContainerVariants = {
-    hidden: { opacity: 0 }, // Can be simple, as itemVariants on this div handles its entry
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.15, // Stagger the three division columns
-      }
-    }
-  };
-
-
   return (
-    <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center">
+    <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center bg-neutral-950">
       {/* Video Background */}
       <video
         ref={videoRef}
@@ -205,138 +86,185 @@ export default function Home() {
         muted
         playsInline
         preload="auto"
-        onLoadedData={() => setVideoLoaded(true)}
         onError={(e) => console.error('Video error:', e)}
-        className="fixed inset-0 w-full h-full object-cover"
-        style={{ zIndex: 0 }}
+        className="absolute top-0 left-0 w-full h-full object-cover"
+        style={{
+          zIndex: 0,
+          minWidth: '100%',
+          minHeight: '100%',
+          width: 'auto',
+          height: 'auto',
+          filter: 'brightness(0.7) blur(1.5px) saturate(1.1)'
+        }}
       >
         <source src="/uamcuajimalpa.mp4" type="video/mp4" />
-        Tu navegador no soporta el elemento video.
       </video>
-      
-      {/* Modern gradient overlay to reduce brightness and add diffused bottom */}
-      <div 
-        className="fixed inset-0 w-full h-full"
-        style={{ 
+
+      {/* Modern gradient overlay */}
+      <div
+        className="absolute top-0 left-0 w-full h-full pointer-events-none"
+        style={{
           zIndex: 1,
           background: `
             linear-gradient(
-              to bottom,
-              rgba(0, 0, 0, 0.3) 0%,
-              rgba(0, 0, 0, 0.4) 40%,
-              rgba(0, 0, 0, 0.6) 70%,
-              rgba(0, 0, 0, 0.8) 100%
+              120deg,
+              rgba(249,115,22,0.10) 0%,
+              rgba(0,0,0,0.35) 40%,
+              rgba(0,0,0,0.65) 70%,
+              rgba(0,0,0,0.92) 100%
             )
           `,
-          backdropFilter: 'brightness(0.7) contrast(1.1)'
+          backdropFilter: 'brightness(0.95) blur(0.5px)'
         }}
       ></div>
-      
-      <motion.div
-        className="fixed top-4 left-4 bg-white p-2 rounded-lg shadow-md"
-        style={{ zIndex: 50 }}
-        variants={logoVariants}
-        initial="hidden"
-        animate={isMounted ? "visible" : "hidden"}
-      >
-        <Image
-          src="/logouam.webp"
-          alt="UAM Logo"
-          width={150}
-          height={75}
-          className="w-16 h-8 sm:w-20 sm:h-10 md:w-24 md:h-12 lg:w-[150px] lg:h-[75px]"
-        />
-      </motion.div>
-      
+
+      {/* Canvas Particles */}
       <canvas
         ref={canvasRef}
         className="fixed inset-0 w-full h-full pointer-events-none"
         style={{ zIndex: 4 }}
       />
 
-      {/* Centered Text Content */}
-      <motion.div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center text-center pointer-events-none px-4"
-        style={{ zIndex: 10 }}
-        variants={containerVariants}
-        initial="hidden"
-        animate={isMounted ? "visible" : "hidden"}
-      >
-        <motion.h1
-          className="text-white font-display font-black tracking-widest mb-2 sm:mb-4 lg:mb-6 leading-tight max-w-[95vw] whitespace-nowrap overflow-x-auto"
-          // Responsive text size: clamp between 2rem and 10vw, up to 10rem
-          style={{ 
-            fontSize: 'clamp(2rem, 10vw, 10rem)',
-            background: 'linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%)',
-            backgroundSize: '200% 100%',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            wordBreak: 'normal',
-            width: '100%',
+      {/* Logo */}
+      <div className="fixed top-6 left-1/2 md:left-8 md:top-8 -translate-x-1/2 md:translate-x-0 p-0 z-50">
+        <div
+          className="flex items-center justify-center"
+          style={{
+            background: "transparent",
+            border: "none",
+            boxShadow: "none",
+            padding: 0
           }}
-          variants={estudiantesTextVariants} 
-          animate={isMounted ? ["visible", "shimmer", "glow"] : "hidden"}
+        >
+          <Image
+            src="/logouam.webp"
+            alt="UAM Logo"
+            width={320}
+            height={160}
+            className="w-52 h-28 sm:w-64 sm:h-32 md:w-36 md:h-20 lg:w-44 lg:h-24 xl:w-56 xl:h-28 object-contain"
+            priority
+          />
+        </div>
+      </div>
+
+      {/* Centered Text Content */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center text-center px-4" style={{ zIndex: 10 }}>
+        <h1
+          className="text-white font-black tracking-wider leading-tight drop-shadow-[0_4px_32px_rgba(249,115,22,0.12)]"
+          style={{
+            fontSize: 'clamp(2.8rem, 10vw, 12rem)',
+            fontFamily: '"Montserrat", "Inter", system-ui, sans-serif',
+            fontWeight: 900,
+            letterSpacing: '0.16em',
+            textShadow: '0 2px 16px rgba(249,115,22,0.12), 0 0 40px rgba(255,255,255,0.08)',
+            whiteSpace: 'nowrap',
+            width: 'fit-content',
+            maxWidth: '95vw',
+            marginBottom: 'clamp(0rem, 0vw, 0rem)'
+          }}
         >
           PERFIL-UAM
-        </motion.h1>
-        <motion.h2
-          className="text-orange-500 text-lg sm:text-xl md:text-3xl lg:text-4xl xl:text-5xl font-heading font-bold mb-2 sm:mb-3 lg:mb-4"
-          variants={uamTextVariants} 
-          animate={isMounted ? "visible" : "hidden"}
+        </h1>
+        <h2
+          className="text-orange-500 font-bold drop-shadow-[0_2px_16px_rgba(249,115,22,0.18)]"
           style={{
-            textShadow: '2px 2px 8px rgba(0,0,0,0.8)'
+            fontSize: 'clamp(1.4rem, 5.5vw, 6rem)',
+            fontFamily: '"Poppins", "Inter", system-ui, sans-serif',
+            fontWeight: 700,
+            letterSpacing: '0.09em',
+            textShadow: '0 4px 24px rgba(249, 115, 22, 0.22), 0 0 40px rgba(249, 115, 22, 0.12)',
+            textTransform: 'uppercase',
+            marginBottom: '0.7rem',
+            whiteSpace: 'nowrap',
+            maxWidth: '95vw'
           }}
         >
           UNIDAD CUAJIMALPA
-        </motion.h2>
-        <motion.div
-          className="bg-orange-500 h-1 sm:h-1.5 md:h-2 rounded-full w-24 sm:w-40 md:w-56 lg:w-80 xl:w-[24rem] mb-4 sm:mb-6"
-          variants={barVariants} 
-          animate={isMounted ? "visible" : "hidden"}
-          style={{ transformOrigin: "center" }}
-        ></motion.div>
+        </h2>
+        {/* Orange Bar */}
+        <div
+          className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 h-1.5 rounded-full shadow-lg shadow-orange-500/30 transition-all duration-300"
+          style={{
+            width: 'clamp(80px, 14vw, 160px)',
+            marginBottom: 'clamp(1.2rem, 3vw, 2rem)'
+          }}
+        ></div>
+        <p
+          className="text-gray-100 font-medium px-4 max-w-2xl drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)]"
+          style={{
+            fontSize: 'clamp(0.9rem, 2vw, 1.4rem)',
+            fontFamily: '"Inter", "Roboto", system-ui, sans-serif',
+            fontWeight: 500,
+            letterSpacing: '0.03em',
+            lineHeight: '1.6',
+            marginBottom: 'clamp(1.5rem, 4vw, 2.5rem)'
+          }}
+        >
+          Descubre el talento del Departamento de Matemáticas Aplicadas y Sistemas
+        </p>
+      </div>
 
-        <motion.p
-          className="text-white text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl mt-4 sm:mt-6 lg:mt-10 font-body font-medium px-2"
-          style={{ textShadow: '2px 2px 6px rgba(0,0,0,0.8)' }}
-          variants={itemVariants} 
-        >
-          Conoce el talento de las tres divisiones académicas:
-        </motion.p>
+      {/* Scroll Down Indicator */}
+      <div
+        className="fixed bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center cursor-pointer group z-20"
+      >
+        <span className="text-white text-sm font-semibold mb-3 tracking-wide opacity-90 group-hover:opacity-100 transition-opacity drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]">
+          <span className="hidden md:inline">Desliza hacia abajo</span>
+          <span className="md:hidden">Desliza hacia arriba</span>
+        </span>
+        {/* Mouse icon for desktop */}
+        <div className="hidden md:flex w-6 h-10 border-2 border-orange-400 rounded-full justify-center bg-gradient-to-b from-orange-500/20 to-transparent shadow-lg shadow-orange-500/30">
+          <div className="w-1.5 h-3 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full mt-1.5 animate-pulse shadow-sm"></div>
+        </div>
+        {/* Mobile phone icon for mobile */}
+        <div className="flex md:hidden flex-col items-center">
+          <svg className="w-8 h-8 text-orange-400 drop-shadow-[0_2px_12px_rgba(249,115,22,0.18)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+            <rect x="6" y="2.5" width="12" height="19" rx="3" fill="none" stroke="currentColor" />
+            <circle cx="12" cy="19" r="1" fill="currentColor" className="text-orange-300"/>
+            <rect x="9" y="5" width="6" height="1.5" rx="0.75" fill="currentColor" className="text-orange-300"/>
+          </svg>
+        </div>
+        <div className="text-orange-400 group-hover:text-orange-300 transition-colors" style={{ marginTop: 'clamp(2rem, 1vw, 4rem)' }}>
+          <svg
+            className="w-6 h-6 animate-bounce"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            strokeWidth={2.5}
+            style={{
+              animation: 'bounce 2s infinite, glow 2s ease-in-out infinite alternate'
+            }}
+          >
+            {/* Solo la flecha, sin el palito */}
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Custom animations */}
+      <style jsx>{`
+        @keyframes glow {
+          from {
+            filter: drop-shadow(0 0 5px rgba(249, 115, 22, 0.5));
+          }
+          to {
+            filter: drop-shadow(0 0 15px rgba(249, 115, 22, 0.8));
+          }
+        }
         
-        <motion.div 
-          className="mt-4 sm:mt-6 flex flex-col md:flex-row justify-around w-full max-w-xs sm:max-w-sm md:max-w-3xl lg:max-w-5xl px-2 sm:px-4 gap-4 md:gap-2"
-          variants={divisionsContainerVariants}
-        >
-          <motion.div
-            className="flex flex-col items-center text-gray-300 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-center px-2 font-body"
-            variants={divisionItemVariants}
-            whileHover="hover" 
-            style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}
-          >
-            <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-1 sm:mb-2 text-orange-500" >🔬</span>
-            Ciencias Naturales e Ingeniería
-          </motion.div>
-          <motion.div
-            className="flex flex-col items-center text-gray-300 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-center px-2 font-body"
-            variants={divisionItemVariants} 
-            whileHover="hover"
-            style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}
-          >
-            <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-1 sm:mb-2 text-orange-500" >🎨</span>
-            Comunicación y Diseño
-          </motion.div>
-          <motion.div
-            className="flex flex-col items-center text-gray-300 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-center px-2 font-body"
-            variants={divisionItemVariants} 
-            whileHover="hover"
-            style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}
-          >
-            <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-1 sm:mb-2 text-orange-500" >🌍</span>
-            Ciencias Sociales y Humanidades
-          </motion.div>
-        </motion.div>
-      </motion.div>
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-8px);
+          }
+        }
+        
+        .scroll-indicator {
+          animation: float 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }

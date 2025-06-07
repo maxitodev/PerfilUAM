@@ -1,0 +1,16 @@
+{
+  "name": "Perfil UAM - Unidad Cuajimalpa",
+  "short_name": "Perfil UAM",
+  "description": "Conoce el talento de las tres divisiones académicas de la UAM Cuajimalpa",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#ea580c",
+  "icons": [
+    {
+      "src": "/logouam.webp",
+      "sizes": "192x192",
+      "type": "image/webp"
+    }
+  ]
+}
