@@ -9,18 +9,25 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.1.0",
     "@studio-freight/lenis": "^1.0.42",
+    "bcryptjs": "^3.0.2",
     "framer-motion": "^12.15.0",
     "gsap": "^3.13.0",
+    "mongoose": "^8.15.1",
     "motion": "^12.15.0",
     "next": "15.3.3",
+    "next-auth": "^4.24.11",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.57.0",
+    "zod": "^3.25.56"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/bcryptjs": "^3.0.0",
+    "@types/node": "^22.15.30",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

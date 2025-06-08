@@ -1,61 +1,36 @@
 import type { Metadata } from "next";
-import { Inter, Montserrat, Poppins, Roboto } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import SessionProvider from "@/components/providers/SessionProvider";
 
-const inter = Inter({
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
 });
 
-const montserrat = Montserrat({
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
-  variable: "--font-montserrat",
-  display: "swap",
-});
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  variable: "--font-poppins",
-  display: "swap",
-});
-
-const roboto = Roboto({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "700"],
-  variable: "--font-roboto",
-  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Perfil UAM - Unidad Cuajimalpa",
+  title: "Perfil UAM - DMAS",
   description:
-    "Conoce el talento de las tres divisiones académicas de la UAM Cuajimalpa",
-  keywords: ["UAM", "Cuajimalpa", "Universidad", "Estudiantes", "Perfil"],
-  authors: [{ name: "UAM Cuajimalpa" }],
-  manifest: "/site.webmanifest",
+    "Plataforma de perfiles profesionales para estudiantes del Departamento de Matemáticas Aplicadas y Sistemas",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html
-      lang="es"
-      className={`${inter.variable} ${montserrat.variable} ${poppins.variable} ${roboto.variable}`}
-    >
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-      </head>
-      <body className={inter.className}>{children}</body>
+    <html lang="es">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <SessionProvider>{children}</SessionProvider>
+      </body>
     </html>
   );
 }
