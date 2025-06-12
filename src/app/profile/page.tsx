@@ -94,6 +94,16 @@ export default function DashboardPage() {
   const [imagePreview, setImagePreview] = useState('')
   const [updatingImage, setUpdatingImage] = useState(false)
 
+  // Agregar estados para la mejora de biografía con IA
+  const [improvingBio, setImprovingBio] = useState(false)
+  const [improvedBio, setImprovedBio] = useState('')
+  const [showImprovedBio, setShowImprovedBio] = useState(false)
+
+  // Agregar estados para la mejora de descripción de proyecto con IA
+  const [improvingProjectDescription, setImprovingProjectDescription] = useState(false)
+  const [improvedProjectDescription, setImprovedProjectDescription] = useState('')
+  const [showImprovedProjectDescription, setShowImprovedProjectDescription] = useState(false)
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login')
@@ -148,6 +158,11 @@ export default function DashboardPage() {
         setHasProfile(true)
         setSuccess(hasProfile ? 'Perfil actualizado exitosamente' : 'Perfil creado exitosamente')
         setTimeout(() => setSuccess(''), 3000)
+        // Eliminado el scroll automático al mensaje
+        // const messageElement = document.getElementById('profile-message')
+        // if (messageElement) {
+        //   messageElement.scrollIntoView({ behavior: 'smooth' })
+        // }
       } else {
         const errorData = await response.json()
         setError(errorData.error || 'Error al guardar el perfil')
@@ -348,6 +363,118 @@ export default function DashboardPage() {
     if (fileInput) fileInput.value = ''
   }
 
+  // Función para mejorar biografía con IA
+  const handleImproveBio = async () => {
+    if (!profileForm.bio.trim()) {
+      setError('Escribe primero tu biografía para poder mejorarla')
+      return
+    }
+
+    setImprovingBio(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/profile/improve-bio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bio: profileForm.bio,
+          userInfo: {
+            carrera: userData?.carrera,
+            trimestre: profileForm.trimestre,
+            division: profileForm.division,
+            skills: profileForm.skills
+          }
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setImprovedBio(data.improvedBio)
+        setShowImprovedBio(true)
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || 'Error al mejorar la biografía')
+      }
+    } catch (error) {
+      console.error('Error improving bio:', error)
+      setError('Error de conexión al mejorar biografía')
+    } finally {
+      setImprovingBio(false)
+    }
+  }
+
+  // Función para aceptar la biografía mejorada
+  const acceptImprovedBio = () => {
+    setProfileForm(prev => ({ ...prev, bio: improvedBio }))
+    setShowImprovedBio(false)
+    setImprovedBio('')
+    setSuccess('Biografía actualizada con IA')
+    setTimeout(() => setSuccess(''), 3000)
+  }
+
+  // Función para rechazar la biografía mejorada
+  const rejectImprovedBio = () => {
+    setShowImprovedBio(false)
+    setImprovedBio('')
+  }
+
+  // Función para mejorar descripción de proyecto con IA
+  const handleImproveProjectDescription = async () => {
+    if (!projectForm.description.trim()) {
+      setError('Escribe primero la descripción del proyecto para poder mejorarla')
+      return
+    }
+
+    setImprovingProjectDescription(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/profile/improve-project-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: projectForm.description,
+          projectInfo: {
+            name: projectForm.name,
+            type: projectForm.type,
+            status: projectForm.status,
+            technologies: projectForm.technologies
+          }
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setImprovedProjectDescription(data.improvedDescription)
+        setShowImprovedProjectDescription(true)
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || 'Error al mejorar la descripción del proyecto')
+      }
+    } catch (error) {
+      console.error('Error improving project description:', error)
+      setError('Error de conexión al mejorar descripción del proyecto')
+    } finally {
+      setImprovingProjectDescription(false)
+    }
+  }
+
+  // Función para aceptar la descripción de proyecto mejorada
+  const acceptImprovedProjectDescription = () => {
+    setProjectForm(prev => ({ ...prev, description: improvedProjectDescription }))
+    setShowImprovedProjectDescription(false)
+    setImprovedProjectDescription('')
+    setSuccess('Descripción del proyecto actualizada con IA')
+    setTimeout(() => setSuccess(''), 3000)
+  }
+
+  // Función para rechazar la descripción de proyecto mejorada
+  const rejectImprovedProjectDescription = () => {
+    setShowImprovedProjectDescription(false)
+    setImprovedProjectDescription('')
+  }
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-gray-50 flex items-center justify-center">
@@ -365,28 +492,32 @@ export default function DashboardPage() {
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+                <svg className="w-4 h-4 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M10 2L3 7v11a1 1 0 001 1h3a1 1 0 001-1v-4h4v4a1 1 0 001 1h3a1 1 0 001-1V7l-7-5z"/>
                 </svg>
               </div>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-xl font-bold text-gray-900">DMAS - Perfil Profesional</h1>
                 <p className="text-sm text-gray-600">Bienvenido, {userData?.name}</p>
               </div>
+              <div className="sm:hidden">
+                <h1 className="text-lg font-bold text-gray-900">DMAS</h1>
+                <p className="text-xs text-gray-600 truncate max-w-[120px]">{userData?.name}</p>
+              </div>
             </div>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Link 
-                href="/students"
-                className="text-gray-600 hover:text-orange-600 px-3 py-2 rounded-lg transition-colors"
+                href="/"
+                className="text-gray-600 hover:text-orange-600 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-colors text-sm sm:text-base"
               >
                 Ver Estudiantes
               </Link>
               <button
-                onClick={() => signOut({ callbackUrl: '/login' })}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-lg transition-colors text-sm sm:text-base"
               >
                 Cerrar Sesión
               </button>
@@ -395,46 +526,193 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Profile Completion Banner */}
-        {hasProfile && profile && (
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-6 mb-8 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold mb-2">Completitud del Perfil</h2>
-                <p className="text-orange-100">
-                  Tu perfil está {profile.completionPercentage}% completo
-                </p>
-              </div>
-              <div className="relative w-20 h-20">
-                <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 32 32">
-                  <circle
-                    cx="16"
-                    cy="16"
-                    r="14"
-                    stroke="rgba(255,255,255,0.3)"
-                    strokeWidth="2"
-                    fill="none"
-                  />
-                  <circle
-                    cx="16"
-                    cy="16"
-                    r="14"
-                    stroke="white"
-                    strokeWidth="2"
-                    fill="none"
-                    strokeDasharray={`${profile.completionPercentage * 0.88} 88`}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-lg font-bold">{profile.completionPercentage}%</span>
+      {/* Modal para mostrar biografía mejorada */}
+      {showImprovedBio && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg sm:max-w-2xl w-full max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-start justify-between mb-4 sm:mb-6">
+                <div className="flex items-center space-x-2 sm:space-x-3 flex-1 mr-4">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a9 9 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900">Biografía Mejorada con IA</h3>
+                    <p className="text-xs sm:text-sm text-gray-600">Revisa y decide si quieres usar esta versión</p>
+                  </div>
                 </div>
+                <button
+                  onClick={rejectImprovedBio}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                >
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Biografía original */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+                    Biografía Original
+                  </h4>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                    <p className="text-gray-700 text-sm leading-relaxed">{profileForm.bio}</p>
+                    <div className="text-right text-xs text-gray-500 mt-2">
+                      {profileForm.bio.length} caracteres
+                    </div>
+                  </div>
+                </div>
+
+                {/* Biografía mejorada */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <span className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full mr-2"></span>
+                    Biografía Mejorada por IA
+                  </h4>
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4">
+                    <p className="text-gray-800 text-sm leading-relaxed font-medium">{improvedBio}</p>
+                    <div className="text-right text-xs text-purple-600 mt-2">
+                      {improvedBio.length} caracteres
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mejoras detectadas */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <h5 className="text-sm font-semibold text-blue-800 mb-2 flex items-center">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Mejoras Aplicadas
+                  </h5>
+                  <ul className="text-xs text-blue-700 space-y-1">
+                    <li>• Tono más profesional y estructurado</li>
+                    <li>• Enfoque en fortalezas técnicas y académicas</li>
+                    <li>• Lenguaje optimizado para reclutadores</li>
+                    <li>• Mejor presentación de objetivos profesionales</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex items-center justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+                <button
+                  onClick={rejectImprovedBio}
+                  className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors"
+                >
+                  Mantener Original
+                </button>
+                <button
+                  onClick={acceptImprovedBio}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105"
+                >
+                  Usar Biografía Mejorada
+                </button>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
+      {/* Modal para mostrar descripción de proyecto mejorada */}
+      {showImprovedProjectDescription && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg sm:max-w-2xl w-full max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-start justify-between mb-4 sm:mb-6">
+                <div className="flex items-center space-x-2 sm:space-x-3 flex-1 mr-4">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-green-500 to-teal-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900">Descripción Mejorada con IA</h3>
+                    <p className="text-xs sm:text-sm text-gray-600">Revisa y decide si quieres usar esta versión</p>
+                  </div>
+                </div>
+                <button
+                  onClick={rejectImprovedProjectDescription}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                >
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Descripción original */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+                    Descripción Original
+                  </h4>
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                    <p className="text-gray-700 text-sm leading-relaxed">{projectForm.description}</p>
+                    <div className="text-right text-xs text-gray-500 mt-2">
+                      {projectForm.description.length} caracteres
+                    </div>
+                  </div>
+                </div>
+
+                {/* Descripción mejorada */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <span className="w-2 h-2 bg-gradient-to-r from-green-500 to-teal-500 rounded-full mr-2"></span>
+                    Descripción Mejorada por IA
+                  </h4>
+                  <div className="bg-gradient-to-r from-green-50 to-teal-50 border border-green-200 rounded-xl p-4">
+                    <p className="text-gray-800 text-sm leading-relaxed font-medium">{improvedProjectDescription}</p>
+                    <div className="text-right text-xs text-green-600 mt-2">
+                      {improvedProjectDescription.length} caracteres
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mejoras detectadas */}
+                <div className="bg-teal-50 border border-teal-200 rounded-xl p-4">
+                  <h5 className="text-sm font-semibold text-teal-800 mb-2 flex items-center">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Mejoras Aplicadas
+                  </h5>
+                  <ul className="text-xs text-teal-700 space-y-1">
+                    <li>• Tono más técnico y profesional</li>
+                    <li>• Mejor estructura y claridad</li>
+                    <li>• Enfoque en competencias demostradas</li>
+                    <li>• Descripción del valor e impacto del proyecto</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex items-center justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+                <button
+                  onClick={rejectImprovedProjectDescription}
+                  className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors"
+                >
+                  Mantener Original
+                </button>
+                <button
+                  onClick={acceptImprovedProjectDescription}
+                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105"
+                >
+                  Usar Descripción Mejorada
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tabs */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 mb-8">
           <div className="border-b border-gray-200">
@@ -474,7 +752,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Messages */}
-          {(error || success) && (
+          {activeTab === 'projects' && (error || success) && (
             <div className="p-6 border-b border-gray-200">
               {error && (
                 <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl mb-4">
@@ -486,7 +764,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
-              
               {success && (
                 <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-xl">
                   <div className="flex items-center">
@@ -599,7 +876,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
@@ -739,21 +1016,50 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Bio */}
+                {/* Bio con mejora IA */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Biografía Profesional</label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">Biografía Profesional</label>
+                    <button
+                      type="button"
+                      onClick={handleImproveBio}
+                      disabled={improvingBio || !profileForm.bio.trim()}
+                      className="flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white text-sm font-medium rounded-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    >
+                      {improvingBio ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Mejorando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a9 9 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                          </svg>
+                          <span>Mejorar con IA</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <textarea
                     value={profileForm.bio}
-                    onChange={(e) => setProfileForm(prev => ({ ...prev, bio: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value.slice(0, 350)
+                      setProfileForm(prev => ({ ...prev, bio: value }))
+                    }}
                     rows={4}
-                    maxLength={500}
+                    maxLength={350}
                     className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
                     placeholder="Escribe una breve descripción sobre ti, tus intereses y objetivos profesionales..."
                     required
                   />
-                  <div className="text-right text-sm text-gray-500 mt-1">
-                    {profileForm.bio.length}/500 caracteres
+                  <div className="flex justify-between items-center mt-2">
+                    <p className="text-xs text-gray-500">
+                      Tip: Escribe tu biografía y usa el botón "Mejorar con IA" para una versión más profesional
+                    </p>
+                    <div className="text-sm text-gray-500">
+                      {profileForm.bio.length}/350 caracteres
+                    </div>
                   </div>
                 </div>
 
@@ -814,6 +1120,37 @@ export default function DashboardPage() {
                       hasProfile ? 'Actualizar Perfil' : 'Crear Perfil'
                     )}
                   </button>
+                </div>
+                {/* Success or Error Message */}
+                <div id="profile-message" className="mt-4">
+                  {error && (
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl">
+                      <div className="flex items-center">
+                        <svg className="w-5 h-5 text-red-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fillRule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <p className="text-red-700 font-medium">{error}</p>
+                      </div>
+                    </div>
+                  )}
+                  {success && (
+                    <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-xl">
+                      <div className="flex items-center">
+                        <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <p className="text-green-700 font-medium">{success}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </form>
             )}
@@ -881,15 +1218,49 @@ export default function DashboardPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-700">Descripción</label>
+                        <button
+                          type="button"
+                          onClick={handleImproveProjectDescription}
+                          disabled={improvingProjectDescription || !projectForm.description.trim()}
+                          className="flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white text-sm font-medium rounded-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        >
+                          {improvingProjectDescription ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              <span>Mejorando...</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a9 9 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                              </svg>
+                              <span>Mejorar con IA</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                       <textarea
                         value={projectForm.description}
-                        onChange={(e) => setProjectForm(prev => ({ ...prev, description: e.target.value }))
-                        }
+                        onChange={(e) => {
+                          const value = e.target.value.slice(0, 350)
+                          setProjectForm(prev => ({ ...prev, description: value }))
+                        }}
                         rows={4}
+                        maxLength={350}
                         className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all resize-none"
+                        placeholder="Describe detalladamente tu proyecto, sus objetivos, funcionalidades y tecnologías utilizadas..."
                         required
                       />
+                      <div className="flex justify-between items-center mt-2">
+                        <p className="text-xs text-gray-500">
+                          Tip: Escribe la descripción y usa el botón "Mejorar con IA" para una versión más técnica
+                        </p>
+                        <div className="text-sm text-gray-500">
+                          {projectForm.description.length}/350 caracteres
+                        </div>
+                      </div>
                     </div>
 
                     <div>
@@ -913,7 +1284,8 @@ export default function DashboardPage() {
                           </span>
                         ))}
                       </div>
-                      <div className="flex space-x-2">
+                      {/* Responsive input+button for mobile */}
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <input
                           type="text"
                           value={newTechnology}
@@ -925,7 +1297,7 @@ export default function DashboardPage() {
                         <button
                           type="button"
                           onClick={addTechnology}
-                          className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors"
+                          className="w-full sm:w-auto px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors"
                         >
                           Agregar
                         </button>
@@ -1056,7 +1428,7 @@ export default function DashboardPage() {
                                   className="text-orange-600 hover:text-orange-700 flex items-center space-x-1"
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                   </svg>
                                   <span>Ver proyecto</span>
                                 </a>

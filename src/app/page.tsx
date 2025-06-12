@@ -2,6 +2,15 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Lenis from '@studio-freight/lenis';
+import IntelligentSearch from "@/components/IntelligentSearch";
+
+// Register GSAP plugins
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 // Interfaces para los perfiles
 interface StudentProfile {
@@ -48,7 +57,174 @@ export default function Home() {
   // Estados para paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [profilesPerPage] = useState(12); // 12 perfiles por página
+  
+  // Lenis smooth scroll reference
+  const lenisRef = useRef<Lenis | null>(null);
 
+  // Calculate currentProfiles here, before any useEffects that depend on it
+  const totalPages = Math.ceil(filteredProfiles.length / profilesPerPage);
+  const startIndex = (currentPage - 1) * profilesPerPage;
+  const endIndex = startIndex + profilesPerPage;
+  const currentProfiles = filteredProfiles.slice(startIndex, endIndex);
+  
+  // Refs for GSAP animations
+  const heroTitleRef = useRef<HTMLHeadingElement>(null);
+  const heroSubtitleRef = useRef<HTMLHeadingElement>(null);
+  const heroDividerRef = useRef<HTMLDivElement>(null);
+  const heroTextRef = useRef<HTMLParagraphElement>(null);
+  const profilesSectionRef = useRef<HTMLElement>(null);
+  const profilesHeaderRef = useRef<HTMLDivElement>(null);
+  const searchBarRef = useRef<HTMLDivElement>(null);
+  const profilesGridRef = useRef<HTMLDivElement>(null);
+  const profileCardsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Initialize Lenis smooth scrolling with custom scrollbar
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Add custom scrollbar styling class to body
+    document.body.classList.add('custom-scrollbar');
+    
+    // Initialize Lenis for smooth scrolling
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // https://www.desmos.com/calculator/brs54l4xou
+      orientation: 'vertical',
+      gestureOrientation: 'vertical',
+      mouseMultiplier: 1,
+      smoothTouch: false,
+      touchMultiplier: 2,
+      infinite: false,
+    });
+    
+    lenisRef.current = lenis;
+    
+    // Integrate GSAP with Lenis
+    lenis.on('scroll', ScrollTrigger.update);
+    
+    // Add lenis scroll to animation frame
+    function raf(time: number) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    // Update ScrollTrigger to work with Lenis
+    gsap.ticker.add((time) => {
+      lenis.raf(time * 1000);
+    });
+    
+    return () => {
+      lenis.destroy();
+      gsap.ticker.remove((time) => {
+        lenis.raf(time * 1000);
+      });
+      document.body.classList.remove('custom-scrollbar');
+    };
+  }, []);
+  
+  // Disable scrolling when modal is open
+  useEffect(() => {
+    if (!lenisRef.current) return;
+    
+    if (showProfileModal) {
+      lenisRef.current.stop();
+    } else {
+      lenisRef.current.start();
+    }
+  }, [showProfileModal]);
+
+  // Hero section entrance animation
+  useEffect(() => {
+    // Only animate if all refs are available
+    if (
+      !heroTitleRef.current ||
+      !heroSubtitleRef.current ||
+      !heroDividerRef.current ||
+      !heroTextRef.current
+    ) return;
+
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+    tl.fromTo(
+      heroTitleRef.current,
+      { opacity: 0, y: 50 },
+      { opacity: 1, y: 0, duration: 1.2 }
+    )
+    .fromTo(
+      heroSubtitleRef.current,
+      { opacity: 0, y: 30 },
+      { opacity: 1, y: 0, duration: 1 },
+      "-=0.8"
+    )
+    .fromTo(
+      heroDividerRef.current,
+      { scaleX: 0 },
+      { scaleX: 1, duration: 0.8 },
+      "-=0.6"
+    )
+    .fromTo(
+      heroTextRef.current,
+      { opacity: 0, y: 20 },
+      { opacity: 1, y: 0, duration: 0.8 },
+      "-=0.4"
+    );
+  }, []);
+
+  // Profiles section entrance animations with ScrollTrigger
+  useEffect(() => {
+    if (typeof window === 'undefined' || loading) return;
+
+    // Header and search bar animations (mantener)
+    if (profilesHeaderRef.current && profilesSectionRef.current) {
+      gsap.fromTo(
+        profilesHeaderRef.current,
+        { opacity: 0, y: 40 },
+        { 
+          opacity: 1, 
+          y: 0, 
+          duration: 0.8,
+          scrollTrigger: {
+            trigger: profilesSectionRef.current,
+            start: "top 80%",
+          }
+        }
+      );
+    }
+
+    if (searchBarRef.current && profilesSectionRef.current) {
+      gsap.fromTo(
+        searchBarRef.current,
+        { opacity: 0, y: 30, scale: 0.95 },
+        { 
+          opacity: 1, 
+          y: 0, 
+          scale: 1,
+          duration: 0.8,
+          delay: 0.2,
+          scrollTrigger: {
+            trigger: profilesSectionRef.current,
+            start: "top 75%",
+          }
+        }
+      );
+    }
+
+    // Quitar animaciones de perfiles (cards)
+    if (
+      profilesGridRef.current &&
+      profileCardsRef.current.length > 0 &&
+      profileCardsRef.current.every(Boolean) &&
+      !loading
+    ) {
+      // Forzar visibilidad sin animación
+      gsap.set(profilesGridRef.current, { opacity: 1, y: 0 });
+      gsap.set(profileCardsRef.current, { opacity: 1, y: 0, scale: 1 });
+    }
+  }, [loading, currentProfiles]);
+
+  // Canvas animation
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -119,6 +295,40 @@ export default function Home() {
     };
   }, []);
 
+  // Function to animate profile cards when filtering/changing page
+  // Eliminar animación, solo forzar visibilidad
+  useEffect(() => {
+    if (
+      profilesGridRef.current &&
+      profileCardsRef.current.length > 0 &&
+      profileCardsRef.current.every(Boolean) &&
+      !loading
+    ) {
+      gsap.set(profilesGridRef.current, { opacity: 1, y: 0 });
+      gsap.set(profileCardsRef.current, { opacity: 1, y: 0, scale: 1 });
+    }
+  }, [filteredProfiles, currentPage, loading, searchTerm, selectedCarrera]);
+
+  // Modal animation
+  useEffect(() => {
+    if (showProfileModal && modalRef.current) {
+      // Animate modal entrance
+      gsap.fromTo(
+        modalRef.current,
+        { 
+          opacity: 0,
+          scale: 0.9,
+        },
+        { 
+          opacity: 1,
+          scale: 1,
+          duration: 0.5,
+          ease: "power3.out"
+        }
+      );
+    }
+  }, [showProfileModal]);
+
   // Función para cargar perfiles
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -179,19 +389,36 @@ export default function Home() {
     setCurrentPage(1); // Resetear a la primera página cuando se filtran los resultados
   }, [searchTerm, selectedCarrera, profiles]);
 
-  // Cálculos para paginación
-  const totalPages = Math.ceil(filteredProfiles.length / profilesPerPage);
-  const startIndex = (currentPage - 1) * profilesPerPage;
-  const endIndex = startIndex + profilesPerPage;
-  const currentProfiles = filteredProfiles.slice(startIndex, endIndex);
+  // Estados para búsqueda inteligente
+  const [searchInsights, setSearchInsights] = useState<any>(null);
+  const [searchReasoning, setSearchReasoning] = useState<string>("");
+
+  // Callback para resultados de búsqueda inteligente
+  const handleIntelligentSearchResults = (
+    filteredProfiles: StudentProfile[],
+    insights: any,
+    reasoning: string
+  ) => {
+    setFilteredProfiles(filteredProfiles);
+    setCurrentPage(1);
+    setSearchInsights(insights);
+    setSearchReasoning(reasoning);
+  };
 
   // Funciones de paginación
   const goToPage = (page: number) => {
     setCurrentPage(page);
-    // Scroll suave hacia la sección de perfiles
-    const profilesSection = document.querySelector('#profiles-section');
-    if (profilesSection) {
-      profilesSection.scrollIntoView({ behavior: 'smooth' });
+    
+    // Scroll suave hacia la sección de perfiles con Lenis
+    if (lenisRef.current) {
+      const profilesSection = document.getElementById('profiles-section');
+      if (profilesSection) {
+        lenisRef.current.scrollTo(profilesSection, {
+          offset: -20, // Small offset from the top
+          duration: 1.5,
+          easing: (t) => 1 - Math.pow(1 - t, 3), // Ease out cubic
+        });
+      }
     }
   };
 
@@ -204,6 +431,20 @@ export default function Home() {
   const goToNextPage = () => {
     if (currentPage < totalPages) {
       goToPage(currentPage + 1);
+    }
+  };
+
+  // Scroll to element function
+  const scrollToElement = (elementId: string) => {
+    if (lenisRef.current) {
+      const element = document.getElementById(elementId);
+      if (element) {
+        lenisRef.current.scrollTo(element, {
+          offset: 0,
+          duration: 1.5,
+          easing: (t) => 1 - Math.pow(1 - t, 3), // Ease out cubic
+        });
+      }
     }
   };
 
@@ -243,9 +484,23 @@ export default function Home() {
   };
 
   const closeProfileModal = () => {
-    setSelectedProfile(null);
-    setShowProfileModal(false);
-    document.body.style.overflow = 'unset';
+    if (modalRef.current) {
+      // Animate modal exit
+      gsap.to(modalRef.current, {
+        opacity: 0,
+        scale: 0.9,
+        duration: 0.3,
+        onComplete: () => {
+          setSelectedProfile(null);
+          setShowProfileModal(false);
+          document.body.style.overflow = 'unset';
+        }
+      });
+    } else {
+      setSelectedProfile(null);
+      setShowProfileModal(false);
+      document.body.style.overflow = 'unset';
+    }
   };
 
   return (
@@ -268,7 +523,7 @@ export default function Home() {
             minHeight: '100%',
             width: 'auto',
             height: 'auto',
-            filter: 'brightness(0.7) blur(1.5px) saturate(1.1)'
+            filter: 'brightness(0.7) blur(1.5px) saturate(1.1)',
           }}
         >
           <source src="/uamcuajimalpa.mp4" type="video/mp4" />
@@ -324,6 +579,7 @@ export default function Home() {
         {/* Centered Text Content */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center text-center px-4" style={{ zIndex: 10 }}>
           <h1
+            ref={heroTitleRef}
             className="text-white font-black tracking-wider leading-tight drop-shadow-[0_4px_32px_rgba(249,115,22,0.12)]"
             style={{
               fontSize: 'clamp(2.8rem, 10vw, 12rem)',
@@ -340,6 +596,7 @@ export default function Home() {
             PERFIL-UAM
           </h1>
           <h2
+            ref={heroSubtitleRef}
             className="text-orange-500 font-bold drop-shadow-[0_2px_16px_rgba(249,115,22,0.18)]"
             style={{
               fontSize: 'clamp(1.4rem, 5.5vw, 6rem)',
@@ -357,13 +614,16 @@ export default function Home() {
           </h2>
           {/* Orange Bar */}
           <div
+            ref={heroDividerRef}
             className="bg-gradient-to-r from-orange-600 via-orange-500 to-orange-400 h-1.5 rounded-full shadow-lg shadow-orange-500/30 transition-all duration-300"
             style={{
               width: 'clamp(80px, 14vw, 160px)',
-              marginBottom: 'clamp(1.2rem, 3vw, 2rem)'
+              marginBottom: 'clamp(1.2rem, 3vw, 2rem)',
+              transformOrigin: 'center'
             }}
           ></div>
           <p
+            ref={heroTextRef}
             className="text-gray-100 font-medium px-4 max-w-2xl drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)]"
             style={{
               fontSize: 'clamp(0.9rem, 2vw, 1.4rem)',
@@ -381,6 +641,7 @@ export default function Home() {
         {/* Scroll Down Indicator */}
         <div
           className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center cursor-pointer group z-20"
+          onClick={() => scrollToElement('profiles-section')}
         >
           <span className="text-white text-sm font-semibold mb-3 tracking-wide opacity-90 group-hover:opacity-100 transition-opacity drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]">
             <span className="hidden md:inline">Desliza hacia abajo</span>
@@ -417,7 +678,7 @@ export default function Home() {
       </div>
 
       {/* Nueva sección de perfiles */}
-      <section id="profiles-section" className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50 relative">
+      <section ref={profilesSectionRef} id="profiles-section" className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50 relative">
         {/* Background decorativo */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-20 left-20 w-72 h-72 bg-orange-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
@@ -427,7 +688,7 @@ export default function Home() {
 
         <div className="container mx-auto px-4 py-16 relative z-10">
           {/* Header */}
-          <div className="text-center mb-12">
+          <div ref={profilesHeaderRef} className="text-center mb-12">
             <h2 className="text-5xl font-black text-gray-900 mb-4 tracking-tight">
               Descubre <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-600">Talento</span>
             </h2>
@@ -436,69 +697,12 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Barra de búsqueda y filtros */}
-          <div className="max-w-4xl mx-auto mb-12">
-            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-8">
-              <div className="grid md:grid-cols-3 gap-6">
-                {/* Búsqueda */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Buscar perfiles
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                      placeholder="Buscar por nombre, habilidades, proyectos..."
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-6">
-                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Filtro por carrera */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Filtrar por carrera
-                  </label>
-                  <select
-                    value={selectedCarrera}
-                    onChange={(e) => setSelectedCarrera(e.target.value)}
-                    className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all appearance-none"
-                  >
-                    <option value="">Todas las carreras</option>
-                    <option value="Ingeniería en Computación">Ingeniería en Computación</option>
-                    <option value="Matemáticas Aplicadas">Matemáticas Aplicadas</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Estadísticas actualizadas */}
-              <div className="mt-6 pt-6 border-t border-gray-100">
-                <div className="flex flex-wrap items-center justify-between text-sm text-gray-600">
-                  <span className="font-medium">
-                    Mostrando {startIndex + 1}-{Math.min(endIndex, filteredProfiles.length)} de {filteredProfiles.length} perfiles
-                    {profiles.length !== filteredProfiles.length && ` (${profiles.length} total)`}
-                  </span>
-                  <div className="flex items-center space-x-4 mt-2 md:mt-0">
-                    <span className="flex items-center">
-                      <div className="w-3 h-3 bg-green-400 rounded-full mr-2"></div>
-                      Perfiles activos
-                    </span>
-                    {totalPages > 1 && (
-                      <span className="text-orange-600 font-medium">
-                        Página {currentPage} de {totalPages}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+          {/* Barra de búsqueda inteligente */}
+          <div ref={searchBarRef} className="mb-10">
+            <IntelligentSearch
+              profiles={profiles}
+              onResults={handleIntelligentSearchResults}
+            />
           </div>
 
           {/* Grid de perfiles */}
@@ -522,10 +726,13 @@ export default function Home() {
           ) : (
             <>
               {/* Grid de perfiles actuales */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                {currentProfiles.map((profile) => (
+              <div ref={profilesGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                {currentProfiles.map((profile, index) => (
                   <div
                     key={profile._id}
+                    ref={(el) => {
+                      profileCardsRef.current[index] = el;
+                    }}
                     className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer group"
                     onClick={() => openProfileModal(profile)}
                   >
@@ -732,74 +939,160 @@ export default function Home() {
               )}
             </>
           )}
-
+          
           {/* Call to action */}
-          <div className="text-center mt-16">
-            <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 max-w-2xl mx-auto">
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                ¿Eres estudiante del DMAS?
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Únete a nuestra plataforma y muestra tu talento al mundo profesional
-              </p>
-              <Link
-                href="/register"
-                className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-              >
-                <span>Crear mi perfil</span>
-                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </Link>
+<div className="text-center mt-20">
+  <div className="relative bg-gradient-to-br from-white via-orange-50/30 to-white rounded-[2.5rem] shadow-2xl border border-gray-100/80 p-12 max-w-4xl mx-auto overflow-hidden backdrop-blur-sm">
+    {/* Elementos decorativos de fondo */}
+    <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+      <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-orange-200/40 to-orange-300/20 rounded-full blur-xl"></div>
+      <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-gradient-to-tr from-orange-100/30 to-orange-200/20 rounded-full blur-2xl"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-gradient-to-r from-orange-50/40 to-transparent rounded-full blur-3xl"></div>
+    </div>
+
+    {/* Contenido principal */}
+    <div className="relative z-10">
+      {/* Icono destacado */}
+      <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-lg shadow-orange-500/25 group-hover:shadow-xl transition-all duration-500">
+        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+        </svg>
+      </div>
+
+      <h3 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-900 via-gray-800 to-orange-600 mb-6 tracking-tight leading-tight">
+        ¿Eres estudiante del 
+        <span className="block text-orange-600 font-black tracking-wider">DMAS?</span>
+      </h3>
+      
+      <p className="text-lg text-gray-600 mb-10 leading-relaxed max-w-2xl mx-auto font-medium">
+        Únete a nuestra plataforma exclusiva y 
+        <span className="text-orange-600 font-semibold"> destaca tu talento </span>
+        ante reclutadores y empresas de tecnología
+      </p>
+      
+
+      {/* Estadísticas rápidas */}
+      <div className="flex flex-wrap items-center justify-center gap-8 mb-10 text-sm text-gray-500">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <span className="font-medium">+{filteredProfiles.length} estudiantes activos</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+          <span className="font-medium">Registro gratuito</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+          <span className="font-medium">Verificación UAM</span>
+        </div>
+      </div>
+      </div>
+
+      {/* Botones de acción mejorados */}
+      <div className="flex flex-col lg:flex-row items-center justify-center gap-6">
+        <Link
+          href="/register"
+          className="group relative inline-flex items-center px-10 py-5 bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 hover:from-orange-600 hover:via-orange-700 hover:to-orange-800 text-white font-bold rounded-2xl transition-all duration-500 transform hover:scale-105 hover:-translate-y-1 shadow-xl hover:shadow-2xl shadow-orange-500/30 hover:shadow-orange-600/40 overflow-hidden"
+        >
+          {/* Efecto de brillo animado */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+          
+          <div className="relative flex items-center">
+            <span className="text-lg tracking-wide">Crear mi Perfil</span>
+            <div className="ml-3 flex items-center justify-center w-8 h-8 bg-white/20 rounded-full group-hover:bg-white/30 transition-all duration-300">
+              <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
             </div>
           </div>
-        </div>
+          
+          {/* Partículas decorativas */}
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-300 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping transition-opacity duration-300"></div>
+          <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-yellow-400 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping transition-opacity duration-300 delay-75"></div>
+        </Link>
+
+        <Link
+          href="/login"
+          className="group relative inline-flex items-center px-10 py-5 bg-white border-2 border-orange-500 text-orange-600 font-bold rounded-2xl transition-all duration-500 hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 hover:text-orange-700 hover:border-orange-600 hover:scale-105 hover:-translate-y-1 shadow-lg hover:shadow-xl hover:shadow-orange-500/20 overflow-hidden"
+        >
+          {/* Efecto de fondo animado */}
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 via-orange-500/5 to-orange-500/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+          
+          <div className="relative flex items-center">
+            <span className="text-lg tracking-wide">Ingresar a mi Perfil</span>
+            <div className="ml-3 flex items-center justify-center w-8 h-8 border border-orange-500/30 rounded-full group-hover:border-orange-600/50 group-hover:bg-orange-500/10 transition-all duration-300">
+              <svg className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+              </svg>
+            </div>
+          </div>
+        </Link>
+      </div>
+
+    </div>
+  </div>
+</div>
       </section>
 
       {/* Modal de perfil detallado */}
       {showProfileModal && selectedProfile && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div 
+            ref={modalRef} 
+            className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto custom-modal-scrollbar"
+          >
             {/* Header del modal */}
-            <div className="relative bg-gradient-to-r from-orange-500 to-orange-600 p-6">
-              <button
-                onClick={closeProfileModal}
-                className="absolute top-4 right-4 w-10 h-10 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center transition-all"
-              >
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+        <div className="relative bg-gradient-to-r from-orange-500 to-orange-600 p-6">
+          {/* Botón X único para cerrar - bien posicionado */}
+          <button
+            onClick={closeProfileModal}
+            className="absolute top-4 right-4 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center z-20 border border-gray-200 shadow-lg transition-all duration-200 hover:scale-105"
+            aria-label="Cerrar perfil"
+          >
+            <svg 
+              className="w-5 h-5 text-gray-700" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+              strokeWidth="2.5"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                d="M6 18L18 6M6 6l12 12" 
+              />
+            </svg>
+          </button>
 
-              <div className="flex items-center space-x-6">
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-3xl overflow-hidden border-4 border-white shadow-lg">
-                    {selectedProfile.user.imageBase64 ? (
-                      <Image
-                        src={selectedProfile.user.imageBase64}
-                        alt={selectedProfile.user.name}
-                        width={96}
-                        height={96}
-                        className="w-full h-full object-cover"
-                        unoptimized={true}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-white flex items-center justify-center">
-                        <svg className="w-12 h-12 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </div>
-                    )}
+          <div className="flex items-center space-x-6 pr-16">
+            <div className="relative">
+              <div className="w-24 h-24 rounded-3xl overflow-hidden border-4 border-white shadow-lg">
+                {selectedProfile.user.imageBase64 ? (
+                  <Image
+                    src={selectedProfile.user.imageBase64}
+                    alt={selectedProfile.user.name}
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-cover"
+                    unoptimized={true}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-white flex items-center justify-center">
+                    <svg className="w-12 h-12 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                   </div>
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-400 rounded-full border-3 border-white"></div>
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-3xl font-bold text-white mb-2">{selectedProfile.user.name}</h2>
-                  <p className="text-orange-100 text-lg">{selectedProfile.user.carrera}</p>
-                  <p className="text-orange-200 text-sm">Matrícula: {selectedProfile.user.matricula}</p>
-                </div>
+                )}
               </div>
+              <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-400 rounded-full border-3 border-white"></div>
             </div>
+            <div className="flex-1">
+              <h2 className="text-3xl font-bold text-white mb-2">{selectedProfile.user.name}</h2>
+              <p className="text-orange-100 text-lg">{selectedProfile.user.carrera}</p>
+              <p className="text-orange-200 text-sm">Matrícula: {selectedProfile.user.matricula}</p>
+            </div>
+          </div>
+        </div>
 
             {/* Contenido del modal */}
             <div className="p-8">
@@ -968,6 +1261,73 @@ export default function Home() {
 
       {/* Estilos globales consolidados */}
       <style jsx global>{`
+        /* Force scrollbar to always show and use our custom styling */
+        html {
+          overflow-y: scroll;
+          --scrollbarBG: rgba(249, 115, 22, 0.05);
+          --thumbBG: linear-gradient(45deg, #ff4500, #ff8c00);
+        }
+        
+        /* Main scrollbar - with higher specificity and !important */
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar,
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 16px !important;
+          height: 16px !important;
+          display: block !important;
+        }
+        
+        html::-webkit-scrollbar-track,
+        body::-webkit-scrollbar-track,
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: var(--scrollbarBG) !important;
+          border-radius: 10px !important;
+        }
+        
+        html::-webkit-scrollbar-thumb,
+        body::-webkit-scrollbar-thumb,
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: var(--thumbBG) !important;
+          border-radius: 8px !important;
+          border: 3px solid rgba(255, 255, 255, 0.9) !important;
+          background-clip: padding-box !important;
+          transition: all 0.3s ease !important;
+          box-shadow: inset 0 0 6px rgba(255, 69, 0, 0.3) !important;
+        }
+        
+        html::-webkit-scrollbar-thumb:hover,
+        body::-webkit-scrollbar-thumb:hover,
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(45deg, #ff5722, #ff9800) !important;
+          border-width: 2px !important;
+        }
+        
+        /* Firefox scrollbar */
+        html, body, .custom-scrollbar {
+          scrollbar-width: thin !important;
+          scrollbar-color: #ff4500 rgba(249, 115, 22, 0.05) !important;
+        }
+        
+        /* Modal scrollbar - with !important to override any default styling */
+        .custom-modal-scrollbar::-webkit-scrollbar {
+          width: 10px !important;
+          display: block !important;
+        }
+        
+        .custom-modal-scrollbar::-webkit-scrollbar-track {
+          background: var(--scrollbarBG) !important;
+          border-radius: 8px !important;
+        }
+        
+        .custom-modal-scrollbar::-webkit-scrollbar-thumb {
+          background: var(--thumbBG) !important;
+          border-radius: 6px !important;
+          border: 2px solid rgba(255, 255, 255, 0.9) !important;
+          background-clip: padding-box !important;
+          box-shadow: inset 0 0 6px rgba(255, 69, 0, 0.3) !important;
+        }
+
+        /* Existing animations */
         @keyframes glow {
           from {
             filter: drop-shadow(0 0 5px rgba(249, 115, 22, 0.5));

@@ -330,7 +330,7 @@ export default function RegisterPage() {
                     value={formData.matricula}
                     onChange={handleChange}
                     className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-300 group-hover:bg-gray-100"
-                    placeholder="1234567890"
+                    placeholder="2213026327"
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-4">
                     <svg className="w-5 h-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -594,14 +594,7 @@ export default function RegisterPage() {
                 </Link>
               </p>
               <p className="text-xs text-gray-500 leading-relaxed">
-                Al crear una cuenta, podrás publicar tu currículum, competencias, datos de contacto y tesina en la plataforma del DMAS. 
-                Acepto los{' '}
-                <Link 
-                  href="/terms" 
-                  className="text-orange-600 hover:text-orange-700 underline transition-colors"
-                >
-                  términos y condiciones
-                </Link>
+                Al crear una cuenta, podrás publicar tu currículum, competencias, datos de contacto y tesina en la plataforma del DMAS.
               </p>
             </div>
           </div>
@@ -705,6 +698,13 @@ export default function RegisterPage() {
           }
           100% {
             stroke-dasharray: 0 1000;
+            stroke-dashoffset: -1000;
+          }
+        }
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate
             stroke-dashoffset: -1000;
           }
         }
