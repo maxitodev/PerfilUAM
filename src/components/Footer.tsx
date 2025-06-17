@@ -39,6 +39,9 @@ export default function Footer() {
           <p className="text-gray-300">
             © 2025 PerfilUAM. Todos los derechos reservados.
           </p>
+          <p className="text-xs mt-2 text-gray-400">
+            Idea original: Max Uriel Sánchez Díaz
+          </p>
         </div>
       </div>
     </footer>
