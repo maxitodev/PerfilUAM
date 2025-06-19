@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/lib/auth.config'
 import { connectDB } from '@/lib/mongodb'
 import User from '@/models/user'
 import Profile from '@/models/profile'
@@ -9,10 +9,11 @@ import Project from '@/models/project'
 // GET - Obtener proyecto específico
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession()
+    const { id } = await params
+    const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'No autorizado' },
@@ -22,8 +23,17 @@ export async function GET(
 
     await connectDB()
     
+    // Buscar usuario
+    const user = await User.findOne({ email: session.user.email })
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Usuario no encontrado' },
+        { status: 404 }
+      )
+    }
+    
     // Buscar el perfil del usuario
-    const profile = await Profile.findOne({ user: session.user.id })
+    const profile = await Profile.findOne({ user: user._id })
     
     if (!profile) {
       return NextResponse.json(
@@ -34,7 +44,7 @@ export async function GET(
     
     // Buscar el proyecto por ID y perfil
     const project = await Project.findOne({ 
-      _id: params.id, 
+      _id: id, 
       profile: profile._id 
     })
 
@@ -59,9 +69,10 @@ export async function GET(
 // PUT - Actualizar proyecto
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {
@@ -110,7 +121,7 @@ export async function PUT(
     // Buscar y actualizar el proyecto
     const project = await Project.findOneAndUpdate(
       { 
-        _id: params.id, 
+        _id: id, 
         profile: profile._id 
       },
       {
@@ -159,9 +170,10 @@ export async function PUT(
 // DELETE - Eliminar proyecto
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {
@@ -191,7 +203,7 @@ export async function DELETE(
     
     // Buscar y eliminar el proyecto
     const project = await Project.findOneAndDelete({ 
-      _id: params.id, 
+      _id: id, 
       profile: profile._id 
     })
     

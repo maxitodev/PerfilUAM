@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
+// Definir tipos para los perfiles
+interface Project {
+  name: string;
+  description: string;
+  technologies: string[];
+}
+
+interface Profile {
+  id: string;
+  name: string;
+  career: string;
+  skills: string[];
+  bio: string;
+  projects: Project[];
+}
+
 // Inicializar OpenAI (necesitarás configurar tu API key)
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -8,7 +24,7 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    const { query, profiles } = await request.json();
+    const { query, profiles }: { query: string; profiles: Profile[] } = await request.json();
 
     if (!query || !profiles || profiles.length === 0) {
       return NextResponse.json(
@@ -33,7 +49,7 @@ INSTRUCCIONES:
 CONSULTA DEL USUARIO: "${query}"
 
 PERFILES DISPONIBLES:
-${profiles.map((p, i) => `
+${profiles.map((p: Profile, i: number) => `
 PERFIL ${i + 1}:
 - ID: ${p.id}
 - Nombre: ${p.name}
@@ -110,11 +126,11 @@ Responde ÚNICAMENTE en formato JSON válido con esta estructura exacta:
 // Función de respaldo para búsqueda básica sin IA
 async function fallbackSearch(request: NextRequest) {
   try {
-    const { query, profiles } = await request.json();
+    const { query, profiles }: { query: string; profiles: Profile[] } = await request.json();
     
     const searchTerms = query.toLowerCase().split(' ');
     
-    const scoredProfiles = profiles.map((profile) => {
+    const scoredProfiles = profiles.map((profile: Profile) => {
       let score = 0;
       const searchableText = [
         profile.name,

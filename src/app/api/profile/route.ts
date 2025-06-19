@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth.config'
 import { connectDB } from '@/lib/mongodb'
 import User from '@/models/user'
 import Profile from '@/models/profile'
@@ -51,7 +52,7 @@ interface ProjectDocument {
 // GET - Obtener datos del perfil del usuario
 export async function GET() {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
@@ -62,21 +63,21 @@ export async function GET() {
     // Buscar usuario con imagen
     const user = await User.findOne({ email: session.user.email })
       .select('+imageBase64')
-      .lean() as UserDocument | null
+      .lean() as unknown as UserDocument | null
     
     if (!user) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
     }
 
     // Buscar perfil
-    const profile = await Profile.findOne({ user: user._id }).lean() as ProfileDocument | null
+    const profile = await Profile.findOne({ user: user._id }).lean() as unknown as ProfileDocument | null
     
-    let projects: ProjectDocument[] = []
+    let projects: unknown[] = []
     if (profile) {
       // Buscar proyectos del usuario
       projects = await Project.find({ profile: profile._id })
         .sort({ createdAt: -1 })
-        .lean() as ProjectDocument[]
+        .lean()
     }
 
     return NextResponse.json({
@@ -104,7 +105,7 @@ export async function GET() {
 // POST - Crear nuevo perfil
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'No autorizado' },
@@ -159,7 +160,7 @@ export async function POST(request: Request) {
 // PUT - Actualizar perfil existente
 export async function PUT(request: Request) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'No autorizado' },
