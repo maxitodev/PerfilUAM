@@ -1,11 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { signIn } from 'next-auth/react'
+import { signIn, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 
 export default function LoginPage() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -13,11 +15,16 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const router = useRouter()
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.push('/profile')
+    }
+  }, [status, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,7 +63,7 @@ export default function LoginPage() {
     }
   }
 
-  if (!mounted) return null;
+  if (!mounted || status === 'authenticated') return null;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-gray-50 relative overflow-hidden">
