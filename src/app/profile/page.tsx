@@ -237,12 +237,21 @@ export default function DashboardPage() {
   }
 
   const addSkill = () => {
-    if (newSkill.trim() && !profileForm.skills.includes(newSkill.trim())) {
-      setProfileForm(prev => ({
-        ...prev,
-        skills: [...prev.skills, newSkill.trim()]
-      }))
-      setNewSkill('')
+    if (newSkill.trim()) {
+      // Dividir por comas y limpiar cada habilidad
+      const skills = newSkill
+        .split(',')
+        .map(skill => skill.trim())
+        .filter(skill => skill.length > 0)
+        .filter(skill => !profileForm.skills.includes(skill)) // Evitar duplicados
+
+      if (skills.length > 0) {
+        setProfileForm(prev => ({
+          ...prev,
+          skills: [...prev.skills, ...skills]
+        }))
+        setNewSkill('')
+      }
     }
   }
 
@@ -254,12 +263,21 @@ export default function DashboardPage() {
   }
 
   const addTechnology = () => {
-    if (newTechnology.trim() && !projectForm.technologies.includes(newTechnology.trim())) {
-      setProjectForm(prev => ({
-        ...prev,
-        technologies: [...prev.technologies, newTechnology.trim()]
-      }))
-      setNewTechnology('')
+    if (newTechnology.trim()) {
+      // Dividir por comas y limpiar cada tecnología
+      const technologies = newTechnology
+        .split(',')
+        .map(tech => tech.trim())
+        .filter(tech => tech.length > 0)
+        .filter(tech => !projectForm.technologies.includes(tech)) // Evitar duplicados
+
+      if (technologies.length > 0) {
+        setProjectForm(prev => ({
+          ...prev,
+          technologies: [...prev.technologies, ...technologies]
+        }))
+        setNewTechnology('')
+      }
     }
   }
 
@@ -785,88 +803,85 @@ export default function DashboardPage() {
                 <div className="bg-gray-50 rounded-2xl p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Básica</h3>
                   
-                  {/* Profile Image Section */}
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-4">Imagen de Perfil</label>
-                    <div className="flex items-start space-x-6">
-                      {/* Current Image */}
-                      <div className="flex-shrink-0">
-                        <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-gray-200 bg-gray-100 flex items-center justify-center">
-                          {imagePreview ? (
-                            <img 
-                              src={imagePreview} 
-                              alt="Vista previa de imagen de perfil" 
-                              className="w-full h-full object-cover"
-                            />
-                          ) : userData?.imageBase64 ? (
-                            <img 
-                              src={userData.imageBase64} 
-                              alt="Imagen de perfil actual" 
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-                              <svg className="w-16 h-16 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                              </svg>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Profile Image */}
+                    <div className="lg:col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-3">Foto de Perfil</label>
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="relative">
+                          <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 border-4 border-white shadow-lg">
+                            {imagePreview ? (
+                              <img
+                                src={imagePreview}
+                                alt="Vista previa"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : userData?.imageBase64 ? (
+                              <img
+                                src={userData.imageBase64}
+                                alt="Foto de perfil"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-200 to-orange-300">
+                                <svg className="w-16 h-16 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                          {(imagePreview || updatingImage) && (
+                            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                              {updatingImage ? (
+                                <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              ) : (
+                                <div className="text-white text-xs font-medium">Vista previa</div>
+                              )}
                             </div>
                           )}
                         </div>
-                      </div>
-                      
-                      {/* Image Upload Controls */}
-                      <div className="flex-1">
-                        <div className="space-y-4">
-                          <div>
-                            <label htmlFor="profile-image-input" className="block text-sm font-medium text-gray-700 mb-2">
-                              {userData?.imageBase64 || imagePreview ? 'Cambiar imagen' : 'Subir imagen'}
-                            </label>
-                            <div className="relative">
-                              <input
-                                id="profile-image-input"
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageChange}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                              />
-                              <div className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent transition-all cursor-pointer">
-                                <div className="flex items-center justify-center space-x-3">
-                                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                  </svg>
-                                  <span className="text-sm font-medium text-gray-600">
-                                    Seleccionar imagen
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">
-                              JPG, PNG o WEBP hasta 5MB. Recomendado: 400x400px
-                            </p>
+                        
+                        <div className="w-full max-w-xs space-y-3">
+                          <div className="relative">
+                            <input
+                              id="profile-image-input"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageChange}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            />
+                            <button
+                              type="button"
+                              className="w-full px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                              </svg>
+                              Seleccionar Imagen
+                            </button>
                           </div>
                           
-                          {/* Image Action Buttons */}
-                          {imagePreview && (
-                            <div className="flex space-x-3">
+                          <p className="text-xs text-gray-500 text-center leading-relaxed">
+                            Formatos: JPG, PNG, GIF<br/>
+                            Tamaño máximo: 5MB<br/>
+                            Recomendado: 400x400px
+                          </p>
+                          
+                          {newImageBase64 && (
+                            <div className="flex flex-col sm:flex-row gap-2">
                               <button
                                 type="button"
                                 onClick={handleImageUpdate}
                                 disabled={updatingImage}
-                                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white text-sm font-medium rounded-lg transition-colors"
                               >
-                                {updatingImage ? (
-                                  <div className="flex items-center space-x-2">
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    <span>Guardando...</span>
-                                  </div>
-                                ) : (
-                                  'Guardar imagen'
-                                )}
+                                {updatingImage ? 'Guardando...' : 'Guardar Imagen'}
                               </button>
                               <button
                                 type="button"
                                 onClick={cancelImageUpdate}
-                                className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors"
+                                disabled={updatingImage}
+                                className="flex-1 px-4 py-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg transition-colors"
                               >
                                 Cancelar
                               </button>
@@ -875,47 +890,56 @@ export default function DashboardPage() {
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
-                      <input
-                        type="text"
-                        value={userData?.name || ''}
-                        disabled
-                        className="w-full px-4 py-3 bg-gray-200 border border-gray-300 rounded-xl text-gray-800 font-medium cursor-not-allowed"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                      <input
-                        type="email"
-                        value={userData?.email || ''}
-                        disabled
-                        className="w-full px-4 py-3 bg-gray-200 border border-gray-300 rounded-xl text-gray-800 font-medium cursor-not-allowed"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Matrícula</label>
-                      <input
-                        type="text"
-                        value={userData?.matricula || ''}
-                        disabled
-                        className="w-full px-4 py-3 bg-gray-200 border border-gray-300 rounded-xl text-gray-800 font-medium cursor-not-allowed"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Carrera</label>
-                      <input
-                        type="text"
-                        value={userData?.carrera || ''}
-                        disabled
-                        className="w-full px-4 py-3 bg-gray-200 border border-gray-300 rounded-xl text-gray-800 font-medium cursor-not-allowed"
-                      />
+                    {/* Basic Info */}
+                    <div className="lg:col-span-2 space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Nombre Completo</label>
+                        <input
+                          type="text"
+                          value={userData?.name || ''}
+                          disabled
+                          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl text-gray-700 cursor-not-allowed"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Esta información se obtiene de tu cuenta de Google</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Matrícula</label>
+                          <input
+                            type="text"
+                            value={userData?.matricula || ''}
+                            disabled
+                            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl text-gray-700 cursor-not-allowed"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Carrera</label>
+                          <input
+                            type="text"
+                            value={userData?.carrera || ''}
+                            disabled
+                            className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl text-gray-700 cursor-not-allowed"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Correo Electrónico</label>
+                        <input
+                          type="email"
+                          value={userData?.email || ''}
+                          disabled
+                          className="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-xl text-gray-700 cursor-not-allowed"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Esta información se obtiene de tu cuenta de Google</p>
+                      </div>
                     </div>
                   </div>
                 </div>
+
 
                 {/* Academic Info */}
                 <div>
@@ -1085,23 +1109,26 @@ export default function DashboardPage() {
                       </span>
                     ))}
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       type="text"
                       value={newSkill}
                       onChange={(e) => setNewSkill(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
                       className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                      placeholder="Agregar habilidad (ej: JavaScript, Python, React...)"
+                      placeholder="Ej: JavaScript, React, Python, Node.js (separadas por comas)"
                     />
                     <button
                       type="button"
                       onClick={addSkill}
-                      className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-colors"
+                      className="w-full sm:w-auto px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-colors"
                     >
                       Agregar
                     </button>
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Puedes agregar múltiples habilidades separándolas con comas
+                  </p>
                 </div>
 
                 {/* Submit Button */}
@@ -1263,6 +1290,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
+                    {/* Technologies */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Tecnologías</label>
                       <div className="flex flex-wrap gap-2 mb-3">
@@ -1284,15 +1312,14 @@ export default function DashboardPage() {
                           </span>
                         ))}
                       </div>
-                      {/* Responsive input+button for mobile */}
                       <div className="flex flex-col sm:flex-row gap-2">
                         <input
                           type="text"
                           value={newTechnology}
                           onChange={(e) => setNewTechnology(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTechnology())}
-                          className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                          placeholder="Agregar tecnología"
+                          className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          placeholder="Ej: React, Node.js, MongoDB, TypeScript (separadas por comas)"
                         />
                         <button
                           type="button"
@@ -1302,6 +1329,9 @@ export default function DashboardPage() {
                           Agregar
                         </button>
                       </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        💡 Puedes agregar múltiples tecnologías separándolas con comas
+                      </p>
                     </div>
 
                     <div>
@@ -1389,73 +1419,81 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     projects.map((project) => (
-                      <div key={project._id} className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-shadow">
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <h4 className="text-lg font-semibold text-gray-900">{project.name}</h4>
-                              {project.featured && (
-                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
-                                  Destacado
-                                </span>
-                              )}
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                project.status === 'Completado' ? 'bg-green-100 text-green-800' :
-                                project.status === 'En Desarrollo' ? 'bg-blue-100 text-blue-800' :
-                                project.status === 'En Pausa' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {project.status}
+                    <div key={project._id} className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-semibold text-gray-900 truncate">{project.name}</h3>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              project.status === 'Completado' ? 'bg-green-100 text-green-800' :
+                              project.status === 'En Desarrollo' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {project.status}
+                            </span>
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {project.type}
+                            </span>
+                            {project.featured && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                ⭐ Destacado
                               </span>
-                            </div>
-                            <p className="text-gray-600 mb-3">{project.description}</p>
-                            
-                            <div className="flex flex-wrap gap-2 mb-3">
-                              {project.technologies.map((tech, index) => (
-                                <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
-                                  {tech}
-                                </span>
-                              ))}
-                            </div>
-                            
-                            <div className="flex items-center space-x-4 text-sm text-gray-500">
-                              <span>Tipo: {project.type}</span>
-                              {project.link && (
-                                <a 
-                                  href={project.link} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-orange-600 hover:text-orange-700 flex items-center space-x-1"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                  <span>Ver proyecto</span>
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-2 ml-4">
-                            <button
-                              onClick={() => editProject(project)}
-                              className="p-2 text-gray-400 hover:text-orange-600 transition-colors"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => project._id && handleDeleteProject(project._id)}
-                              className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
+                            )}
                           </div>
                         </div>
+                        
+                        <div className="flex flex-row sm:flex-col gap-2 shrink-0">
+                          <button
+                            onClick={() => editProject(project)}
+                            className="px-3 py-1.5 text-xs font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProject(project._id!)}
+                            className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
                       </div>
+                      
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-3 break-words">
+                        {project.description}
+                      </p>
+                      
+                      {project.technologies.length > 0 && (
+                        <div className="mb-4">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Tecnologías:</h4>
+                          <div className="flex flex-wrap gap-1">
+                            {project.technologies.map((tech, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800"
+                              >
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {project.link && (
+                        <div className="pt-4 border-t border-gray-100">
+                          <a
+                            href={project.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700 break-all"
+                          >
+                            <svg className="w-4 h-4 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            <span className="truncate">Ver proyecto</span>
+                          </a>
+                        </div>
+                      )}
+                    </div>
                     ))
                   )}
                 </div>

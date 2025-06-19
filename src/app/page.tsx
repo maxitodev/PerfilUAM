@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Lenis from '@studio-freight/lenis';
 import IntelligentSearch from "@/components/IntelligentSearch";
 
 // Register GSAP plugins
@@ -58,9 +57,6 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const [profilesPerPage] = useState(12); // 12 perfiles por página
   
-  // Lenis smooth scroll reference
-  const lenisRef = useRef<Lenis | null>(null);
-
   // Calculate currentProfiles here, before any useEffects that depend on it
   const totalPages = Math.ceil(filteredProfiles.length / profilesPerPage);
   const startIndex = (currentPage - 1) * profilesPerPage;
@@ -78,59 +74,6 @@ export default function Home() {
   const profilesGridRef = useRef<HTMLDivElement>(null);
   const profileCardsRef = useRef<(HTMLDivElement | null)[]>([]);
   const modalRef = useRef<HTMLDivElement>(null);
-
-  // Initialize Lenis smooth scrolling with custom scrollbar
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    // Add custom scrollbar styling class to body
-    document.body.classList.add('custom-scrollbar');
-    
-    // Initialize Lenis for smooth scrolling
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // https://www.desmos.com/calculator/brs54l4xou
-      orientation: 'vertical',
-      touchMultiplier: 2,
-      infinite: false,
-    });
-    
-    lenisRef.current = lenis;
-    
-    // Integrate GSAP with Lenis
-    lenis.on('scroll', ScrollTrigger.update);
-    
-    // Add lenis scroll to animation frame
-    function raf(time: number) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-    requestAnimationFrame(raf);
-
-    // Update ScrollTrigger to work with Lenis
-    gsap.ticker.add((time) => {
-      lenis.raf(time * 1000);
-    });
-    
-    return () => {
-      lenis.destroy();
-      gsap.ticker.remove((time) => {
-        lenis.raf(time * 1000);
-      });
-      document.body.classList.remove('custom-scrollbar');
-    };
-  }, []);
-  
-  // Disable scrolling when modal is open
-  useEffect(() => {
-    if (!lenisRef.current) return;
-    
-    if (showProfileModal) {
-      lenisRef.current.stop();
-    } else {
-      lenisRef.current.start();
-    }
-  }, [showProfileModal]);
 
   // Hero section entrance animation
   useEffect(() => {
@@ -406,16 +349,9 @@ export default function Home() {
   const goToPage = (page: number) => {
     setCurrentPage(page);
     
-    // Scroll suave hacia la sección de perfiles con Lenis
-    if (lenisRef.current) {
-      const profilesSection = document.getElementById('profiles-section');
-      if (profilesSection) {
-        lenisRef.current.scrollTo(profilesSection, {
-          offset: -20, // Small offset from the top
-          duration: 1.5,
-          easing: (t) => 1 - Math.pow(1 - t, 3), // Ease out cubic
-        });
-      }
+    const profilesSection = document.getElementById('profiles-section');
+    if (profilesSection) {
+      profilesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -433,15 +369,9 @@ export default function Home() {
 
   // Scroll to element function
   const scrollToElement = (elementId: string) => {
-    if (lenisRef.current) {
-      const element = document.getElementById(elementId);
-      if (element) {
-        lenisRef.current.scrollTo(element, {
-          offset: 0,
-          duration: 1.5,
-          easing: (t) => 1 - Math.pow(1 - t, 3), // Ease out cubic
-        });
-      }
+    const element = document.getElementById(elementId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
