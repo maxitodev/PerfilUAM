@@ -6,13 +6,15 @@ export default function Footer() {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-lg font-semibold mb-4">PerfilUAM</h3>
+            <h3 className="text-lg font-semibold mb-2">PerfilUAM</h3>
+            <div className="w-12 h-0.5 bg-gradient-to-r from-orange-500 to-orange-600 mb-4"></div>
             <p className="text-gray-300">
               Plataforma de gestión de perfiles académicos de la Universidad Autónoma Metropolitana.
             </p>
           </div>
           <div>
-            <h3 className="text-lg font-semibold mb-4">Enlaces útiles</h3>
+            <h3 className="text-lg font-semibold mb-2">Enlaces útiles</h3>
+            <div className="w-12 h-0.5 bg-gradient-to-r from-orange-500 to-orange-600 mb-4"></div>
             <ul className="space-y-2">
               <li><a href="https://github.com/maxitodev" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white">GitHub</a></li>
               <li><a href="https://www.linkedin.com/in/maxitodev/" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white">LinkedIn</a></li>
@@ -20,7 +22,8 @@ export default function Footer() {
             </ul>
           </div>
           <div>
-            <h3 className="text-lg font-semibold mb-4">Contacto</h3>
+            <h3 className="text-lg font-semibold mb-2">Contacto</h3>
+            <div className="w-12 h-0.5 bg-gradient-to-r from-orange-500 to-orange-600 mb-4"></div>
             <p className="text-gray-300">
               <strong>Desarrollador:</strong><br />
               Max Uriel Sánchez Díaz<br />

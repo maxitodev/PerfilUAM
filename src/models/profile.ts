@@ -140,7 +140,6 @@ ProfileSchema.pre('save', function(next) {
 });
 
 // Índices para mejorar el rendimiento
-ProfileSchema.index({ user: 1 });
 ProfileSchema.index({ carrera: 1 });
 ProfileSchema.index({ trimestre: 1 });
 ProfileSchema.index({ isActive: 1 });

@@ -8,30 +8,20 @@ export async function DELETE(request: Request) {
   try {
     await connectDB()
     
-    console.log('Iniciando limpieza de la base de datos...')
-    
     // Contar documentos antes de eliminar
     const userCount = await User.countDocuments()
     const profileCount = await Profile.countDocuments()
     const projectCount = await Project.countDocuments()
     
-    console.log(`Documentos encontrados:`)
-    console.log(`- Usuarios: ${userCount}`)
-    console.log(`- Perfiles: ${profileCount}`)
-    console.log(`- Proyectos: ${projectCount}`)
-    
     // Eliminar en orden inverso por dependencias
     // 1. Primero eliminar proyectos (dependen de perfiles)
     const deletedProjects = await Project.deleteMany({})
-    console.log(`Proyectos eliminados: ${deletedProjects.deletedCount}`)
     
     // 2. Luego eliminar perfiles (dependen de usuarios)
     const deletedProfiles = await Profile.deleteMany({})
-    console.log(`Perfiles eliminados: ${deletedProfiles.deletedCount}`)
     
     // 3. Finalmente eliminar usuarios
     const deletedUsers = await User.deleteMany({})
-    console.log(`Usuarios eliminados: ${deletedUsers.deletedCount}`)
     
     return NextResponse.json(
       { 

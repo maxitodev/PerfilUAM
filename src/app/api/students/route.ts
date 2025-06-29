@@ -15,15 +15,10 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '12')
     const search = searchParams.get('search')
 
-    console.log('=== DEBUGGING STUDENTS API ===')
-    console.log('Search params:', { carrera, trimestre, skills, page, limit, search })
-
     await connectDB()
-    console.log('Database connected')
 
     // Si hay parámetros de búsqueda, usar la funcionalidad de filtros
     if (carrera || trimestre || skills || search || page > 1) {
-      console.log('Using filtered search')
       return await getFilteredStudents(request)
     }
 
@@ -32,18 +27,9 @@ export async function GET(request: Request) {
     const totalUsers = await User.countDocuments()
     const activeProfiles = await Profile.countDocuments({ isActive: true })
     const activeUsers = await User.countDocuments({ isActive: true })
-    
-    console.log('Database counts:', {
-      totalProfiles,
-      totalUsers,
-      activeProfiles,
-      activeUsers
-    })
 
     // Buscar todos los perfiles activos primero sin populate
     const rawProfiles = await Profile.find({ isActive: true }).lean()
-    console.log('Raw profiles found:', rawProfiles.length)
-    console.log('Sample raw profile:', rawProfiles[0])
 
     // Buscar todos los perfiles activos y poblar la información del usuario
     const profiles = await Profile.find({ isActive: true })
@@ -53,33 +39,16 @@ export async function GET(request: Request) {
       })
       .lean()
     
-    console.log('Profiles found after populate:', profiles.length)
-    console.log('Sample profile after populate:', profiles[0])
-    
-    // Verificar cada perfil individualmente
-    profiles.forEach((profile, index) => {
-      console.log(`Profile ${index}:`, {
-        hasUser: !!profile.user,
-        userId: profile.user,
-        profileId: profile._id
-      })
-    })
     
     // Filtrar perfiles que tienen usuario válido (después del populate)
     const validProfiles = profiles.filter(profile => profile.user && typeof profile.user === 'object')
     
-    console.log('Valid profiles after filtering:', validProfiles.length)
-    
     if (validProfiles.length === 0) {
-      console.log('No valid profiles found, checking user references...')
       
       // Verificar manualmente los usuarios referenciados
       const userIds = rawProfiles.map(p => p.user)
-      console.log('User IDs from profiles:', userIds)
       
       const users = await User.find({ _id: { $in: userIds }, isActive: true }).lean()
-      console.log('Users found:', users.length)
-      console.log('Sample user:', users[0])
     }
     
     // Obtener proyectos públicos para cada perfil
@@ -91,8 +60,6 @@ export async function GET(request: Request) {
         })
         .select('name description technologies type status featured')
         .lean()
-        
-        console.log(`Projects for profile ${profile._id}:`, projects.length)
         
         return {
           _id: profile._id,
@@ -134,9 +101,6 @@ export async function GET(request: Request) {
       return a.user.name.localeCompare(b.user.name)
     })
     
-    console.log('Final profiles to return:', sortedProfiles.length)
-    console.log('Sample final profile:', sortedProfiles[0])
-    
     const response = {
       profiles: sortedProfiles,
       total: sortedProfiles.length,
@@ -151,8 +115,6 @@ export async function GET(request: Request) {
         finalProfiles: sortedProfiles.length
       }
     }
-    
-    console.log('API Response:', response)
     
     return NextResponse.json(response)
   } catch (error) {

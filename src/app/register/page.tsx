@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -580,6 +581,37 @@ export default function RegisterPage() {
                   </div>
                 )}
               </button>
+
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white text-gray-500 font-medium">o regístrate con</span>
+                </div>
+              </div>
+
+              {/* Google Sign Up Button */}
+              <GoogleSignInButton 
+                mode="register" 
+                callbackUrl="/profile" 
+              />
+
+              {/* Google Info Note */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-blue-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <p className="text-blue-800 text-sm font-medium">Registro rápido con Google</p>
+                    <p className="text-blue-700 text-xs mt-1">
+                      Si usas Google, podrás completar tu matrícula y carrera en tu perfil después del registro.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </form>
 
             {/* Footer Links */}

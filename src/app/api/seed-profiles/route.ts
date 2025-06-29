@@ -138,7 +138,6 @@ const animeAvatars = [
 // Function to convert image URL to base64 with better error handling
 async function urlToBase64(url: string): Promise<string> {
   try {
-    console.log(`Fetching image from: ${url}`)
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -153,7 +152,6 @@ async function urlToBase64(url: string): Promise<string> {
     const buffer = Buffer.from(arrayBuffer);
     const contentType = response.headers.get('content-type') || 'image/jpeg';
     
-    console.log(`Successfully converted image to base64, size: ${buffer.length} bytes`);
     return `data:${contentType};base64,${buffer.toString('base64')}`;
   } catch (error) {
     console.error(`Error converting URL to base64: ${url}`, error);
@@ -185,7 +183,6 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log('Iniciando creación de 40 perfiles con imágenes de anime...')
     const createdProfiles = []
 
     for (let i = 0; i < 40; i++) {
@@ -208,8 +205,6 @@ export async function POST(request: Request) {
       
       const email = `${emailName}@cua.uam.mx`
 
-      console.log(`Creando usuario ${i + 1}/40: ${nombre}, matrícula: ${matricula}`)
-
       // Get anime avatar with retry logic
       let imageBase64 = generateRandomAvatar(); // Default fallback
       const maxRetries = 3;
@@ -217,13 +212,12 @@ export async function POST(request: Request) {
       for (let retry = 0; retry < maxRetries; retry++) {
         try {
           const avatarUrl = animeAvatars[i % animeAvatars.length];
-          console.log(`Attempting to download image ${i + 1}/40 (attempt ${retry + 1}): ${avatarUrl}`);
           imageBase64 = await urlToBase64(avatarUrl);
           break; // Success, exit retry loop
         } catch (error) {
           console.warn(`Retry ${retry + 1} failed for image ${i + 1}:`, error);
           if (retry === maxRetries - 1) {
-            console.log(`Using fallback avatar for user ${i + 1}`);
+            // Using fallback avatar
           }
           // Small delay before retry
           await new Promise(resolve => setTimeout(resolve, 1000));
@@ -297,8 +291,6 @@ export async function POST(request: Request) {
       await new Promise(resolve => setTimeout(resolve, 500))
     }
 
-    console.log(`✅ Proceso completado: ${createdProfiles.length} perfiles creados con imágenes de anime`)
-    
     return NextResponse.json(
       { 
         message: `${createdProfiles.length} perfiles creados exitosamente con imágenes de anime`,

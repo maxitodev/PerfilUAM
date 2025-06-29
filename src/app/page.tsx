@@ -274,21 +274,15 @@ export default function Home() {
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
-        console.log('Fetching profiles...')
         const response = await fetch('/api/students');
-        console.log('Response status:', response.status)
         
         if (response.ok) {
           const data = await response.json();
-          console.log('API Response data:', data)
-          console.log('Profiles received:', data.profiles?.length || 0)
           
           if (data.profiles) {
             setProfiles(data.profiles || []);
             setFilteredProfiles(data.profiles || []);
-            console.log('Profiles set in state:', data.profiles.length)
           } else {
-            console.log('No profiles property in response')
             setProfiles([]);
             setFilteredProfiles([]);
           }
@@ -603,8 +597,6 @@ export default function Home() {
                 animation: 'bounce 2s infinite, glow 2s ease-in-out infinite alternate'
               }}
             >
-              {/* Solo la flecha, sin el palito */}
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7" />
             </svg>
           </div>
         </div>
