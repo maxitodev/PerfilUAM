@@ -5,6 +5,7 @@ import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import IntelligentSearch from "@/components/IntelligentSearch";
+import HamburgerMenu from '../components/HamburgerMenu';
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
@@ -432,6 +433,11 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
+      {/* Menu Hamburguesa - Esquina superior derecha */}
+      <div className="absolute top-6 right-6 z-50">
+        <HamburgerMenu />
+      </div>
+
       {/* Sección del video hero */}
       <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center bg-neutral-950">
         {/* Video Background */}
@@ -482,7 +488,7 @@ export default function Home() {
         />
 
         {/* Logo */}
-        <div className="absolute top-6 left-1/2 md:left-8 md:top-8 -translate-x-1/2 md:translate-x-0 p-0 z-50">
+        <div className="absolute top-6 left-6 md:left-8 md:top-8 p-0 z-40">
           <div
             className="flex items-center justify-center"
             style={{
