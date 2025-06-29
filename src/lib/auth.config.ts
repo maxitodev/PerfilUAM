@@ -4,6 +4,7 @@ import GoogleProvider from 'next-auth/providers/google'
 import bcryptjs from 'bcryptjs'
 import { connectDB } from '@/lib/mongodb'
 import User from '@/models/user'
+import { EmailAutomation } from '@/lib/email-automation'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -59,8 +60,7 @@ export const authOptions: NextAuthOptions = {
             name: user.name,
             image: user.imageBase64
           }
-        } catch (error) {
-          console.error('Error in authorize:', error)
+        } catch (_error) {
           return null
         }
       }
@@ -102,8 +102,20 @@ export const authOptions: NextAuthOptions = {
               provider: 'google',
               providerId: account.providerAccountId,
               isActive: true,
-              lastLogin: new Date()
+              lastLogin: new Date(),
+              createdAt: new Date()
             })
+            
+            // Enviar email de bienvenida SOLO para usuarios completamente nuevos
+            // No esperar el resultado del email para no bloquear el login
+            setTimeout(async () => {
+              try {
+                await EmailAutomation.onUserRegistration(user.email!, user.name!);
+              } catch (_error) {
+                // Error handled silently
+              }
+            }, 100); // Ejecutar después de 100ms
+            
           } else {
             // Actualizar usuario existente
             await User.findByIdAndUpdate(existingUser._id, {
@@ -113,8 +125,7 @@ export const authOptions: NextAuthOptions = {
           }
           
           return true
-        } catch (error) {
-          console.error('Error en signIn callback:', error)
+        } catch (_error) {
           return false
         }
       }
@@ -135,8 +146,8 @@ export const authOptions: NextAuthOptions = {
               token.id = dbUser._id.toString()
               token.provider = 'google'
             }
-          } catch (error) {
-            console.error('Error finding OAuth user in DB:', error)
+          } catch (_error) {
+            // Error handled silently
           }
         } else {
           token.id = user.id
@@ -155,8 +166,7 @@ export const authOptions: NextAuthOptions = {
           if (!dbUser || !dbUser.isActive) {
             return { id: '', email: '', name: '' } // Return a valid but empty JWT object
           }
-        } catch (error) {
-          console.error('Error verifying user in JWT callback:', error)
+        } catch (_error) {
           return { id: '', email: '', name: '' } // Return a valid but empty JWT object
         }
       }

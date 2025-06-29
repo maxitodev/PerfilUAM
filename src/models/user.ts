@@ -54,6 +54,19 @@ const UserSchema = new mongoose.Schema({
   lastLogin: {
     type: Date,
     default: Date.now
+  },
+  // Campos para recuperación de contraseña
+  resetPasswordToken: {
+    type: String,
+    required: false
+  },
+  resetPasswordExpiry: {
+    type: Date,
+    required: false
+  },
+  lastPasswordChange: {
+    type: Date,
+    required: false
   }
 }, {
   timestamps: true,

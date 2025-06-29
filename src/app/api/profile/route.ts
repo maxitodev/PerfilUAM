@@ -93,8 +93,7 @@ export async function GET() {
       profile: profile || null,
       projects
     })
-  } catch (error) {
-    console.error('Error fetching profile:', error)
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Error al cargar perfil' },
       { status: 500 }
@@ -148,8 +147,7 @@ export async function POST(request: Request) {
       profile
     })
 
-  } catch (error) {
-    console.error('Error al crear perfil:', error)
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
@@ -200,8 +198,7 @@ export async function PUT(request: Request) {
       profile
     })
 
-  } catch (error) {
-    console.error('Error al actualizar perfil:', error)
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

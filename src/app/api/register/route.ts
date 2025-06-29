@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import User from '@/models/user'
 import { connectDB } from '@/lib/mongodb'
+import { EmailAutomation } from '@/lib/email-automation'
 
 export async function POST(request: Request) {
   try {
@@ -77,6 +78,19 @@ export async function POST(request: Request) {
     })
     
     await user.save()
+    
+    console.log(`Usuario registrado exitosamente: ${user.email}`);
+    
+    // Enviar email de bienvenida de forma asíncrona
+    console.log(`Intentando enviar email de bienvenida a: ${user.email}`);
+    EmailAutomation.onUserRegistration(user.email, user.name)
+      .then(() => {
+        console.log(`Email de bienvenida enviado exitosamente a: ${user.email}`);
+      })
+      .catch(error => {
+        console.error('Error enviando email de bienvenida:', error);
+        console.error('Stack trace:', error.stack);
+      });
     
     // No devolver la contraseña ni la imagen base64 completa
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

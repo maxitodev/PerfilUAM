@@ -5,6 +5,7 @@ import { connectDB } from '@/lib/mongodb'
 import User from '@/models/user'
 import Profile from '@/models/profile'
 import Project from '@/models/project'
+import { EmailAutomation } from '@/lib/email-automation'
 
 export async function POST(request: Request) {
   try {
@@ -67,6 +68,14 @@ export async function POST(request: Request) {
     })
     
     await project.save()
+    
+    // Enviar notificación por email de forma asíncrona
+    EmailAutomation.onProjectAdded(
+      user.email,
+      user.name,
+      project.name,
+      project.description
+    ).catch(error => console.error('Error enviando notificación de proyecto:', error));
     
     return NextResponse.json(
       { 
