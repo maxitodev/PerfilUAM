@@ -65,15 +65,29 @@ export default function IntelligentSearch({ profiles, onResults }: IntelligentSe
       }, "Mostrando todos los perfiles");
       return;
     }
-    const filtered = profiles.filter(p =>
-      p.user.name.toLowerCase().includes(term) ||
-      p.bio.toLowerCase().includes(term) ||
-      p.skills.some(skill => skill.toLowerCase().includes(term)) ||
-      p.projects.some(project =>
-        project.name.toLowerCase().includes(term) ||
-        project.technologies.some(tech => tech.toLowerCase().includes(term))
-      )
-    );
+
+    const normalizeString = (str: string) => str.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+
+    const filtered = profiles.filter(p => {
+      const normalizedName = normalizeString(p.user.name);
+      const normalizedBio = normalizeString(p.bio);
+      const normalizedSkills = p.skills.map(skill => normalizeString(skill));
+      const normalizedProjects = p.projects.map(project => ({
+        name: normalizeString(project.name),
+        technologies: project.technologies.map(tech => normalizeString(tech))
+      }));
+
+      return (
+        normalizedName.includes(term) ||
+        normalizedBio.includes(term) ||
+        normalizedSkills.some(skill => skill.includes(term)) ||
+        normalizedProjects.some(project =>
+          project.name.includes(term) ||
+          project.technologies.some(tech => tech.includes(term))
+        )
+      );
+    });
+
     onResults(filtered, {
       query: term,
       matchedSkills: [],
