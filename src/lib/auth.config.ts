@@ -98,14 +98,14 @@ export const authOptions: NextAuthOptions = {
             existingUser = await User.create({
               name: user.name,
               email: user.email,
-              imageBase64: user.image,
+              imageBase64: user.image, // Guardar imagen solo para usuarios nuevos
               provider: 'google',
               providerId: account.providerAccountId,
               isActive: true,
               lastLogin: new Date(),
               createdAt: new Date()
             })
-            
+
             // Enviar email de bienvenida SOLO para usuarios completamente nuevos
             // No esperar el resultado del email para no bloquear el login
             setTimeout(async () => {
@@ -115,12 +115,11 @@ export const authOptions: NextAuthOptions = {
                 // Error handled silently
               }
             }, 100); // Ejecutar después de 100ms
-            
           } else {
-            // Actualizar usuario existente
+            // Actualizar usuario existente sin cambiar la imagen
             await User.findByIdAndUpdate(existingUser._id, {
               lastLogin: new Date(),
-              imageBase64: user.image || existingUser.imageBase64
+              imageBase64: existingUser.imageBase64 // Mantener la imagen existente
             })
           }
           
@@ -147,7 +146,7 @@ export const authOptions: NextAuthOptions = {
               token.provider = 'google'
             }
           } catch (_error) {
-            // Error handled silently
+            // Silenciar el error ya que no se utiliza
           }
         } else {
           token.id = user.id
