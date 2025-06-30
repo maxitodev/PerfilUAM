@@ -20,6 +20,12 @@ const UserSchema = new mongoose.Schema({
     required: false,
     select: false // Por defecto no se incluye en las consultas para optimizar rendimiento
   },
+  // Campo para rastrear el origen de la imagen
+  imageSource: {
+    type: String,
+    enum: ['user_upload', 'google_oauth', 'none'],
+    default: 'none'
+  },
   matricula: { 
     type: String, 
     required: false, // Opcional para usuarios OAuth
@@ -103,10 +109,25 @@ UserSchema.methods.getPublicData = function() {
   return userObject;
 }
 
-// Método para obtener datos con imagen
+// Método para verificar si tiene imagen propia (subida por el usuario)
+UserSchema.methods.hasUserUploadedImage = function() {
+  return this.imageBase64 && this.imageSource === 'user_upload';
+}
+
+// Método para actualizar imagen preservando el origen
+UserSchema.methods.updateImageSafely = function(imageBase64: string, source: string = 'user_upload') {
+  this.imageBase64 = imageBase64;
+  this.imageSource = source;
+  return this.save();
+}
+
+// Método para obtener datos con imagen - versión mejorada
 UserSchema.methods.getDataWithImage = function() {
   const userObject = this.toObject();
   delete userObject.password;
+  delete userObject.resetPasswordToken;
+  delete userObject.resetPasswordExpiry;
+  // Mantener imageBase64 y imageSource para manejo de imágenes
   return userObject;
 }
 

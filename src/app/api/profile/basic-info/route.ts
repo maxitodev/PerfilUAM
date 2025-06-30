@@ -7,7 +7,7 @@ import User from '@/models/user'
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
@@ -40,23 +40,24 @@ export async function PUT(request: NextRequest) {
     // Verificar si la matrícula ya está en uso por otro usuario
     const existingUser = await User.findOne({ 
       matricula: matricula.trim(),
-      _id: { $ne: session.user.id }
+      email: { $ne: session.user.email } // Usar email en lugar de _id
     })
 
     if (existingUser) {
       return NextResponse.json({ error: 'Esta matrícula ya está registrada por otro usuario' }, { status: 400 })
     }
 
-    // Actualizar usuario
-    const updatedUser = await User.findByIdAndUpdate(
-      session.user.id,
+    // Actualizar usuario por email y preservar imagen existente
+    const updatedUser = await User.findOneAndUpdate(
+      { email: session.user.email },
       {
         name: name.trim(),
         matricula: matricula.trim(),
         carrera: carrera.trim()
+        // No incluir imageBase64 aquí para no sobrescribir
       },
       { new: true, runValidators: true }
-    )
+    ).select('+imageBase64') // Incluir imagen en la respuesta
 
     if (!updatedUser) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
@@ -64,7 +65,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       message: 'Información básica actualizada exitosamente',
-      user: updatedUser.getPublicData()
+      user: updatedUser.getDataWithImage() // Usar método que incluye imagen
     })
 
   } catch (error: unknown) {

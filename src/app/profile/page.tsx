@@ -1,7 +1,7 @@
 'use client'
 import { useSession, signOut } from 'next-auth/react'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -47,11 +47,14 @@ interface UserData {
 export default function DashboardPage() {
   const { status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   
   const [userData, setUserData] = useState<UserData | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [hasProfile, setHasProfile] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [isInitializing, setIsInitializing] = useState(true)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('profile')
   const [error, setError] = useState('')
@@ -119,12 +122,46 @@ export default function DashboardPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-    } else if (status === 'authenticated') {
-      fetchUserData()
+    const handleAuth = async () => {
+      if (status === 'loading') {
+        return // Mantener loading true mientras NextAuth está cargando
+      }
+      
+      if (status === 'unauthenticated') {
+        setIsInitializing(false)
+        setLoading(false)
+        setIsRedirecting(true)
+        
+        // Pequeño delay antes de redireccionar para mostrar mensaje
+        setTimeout(() => {
+          router.push('/login')
+        }, 500)
+        return
+      }
+      
+      if (status === 'authenticated') {
+        try {
+          await fetchUserData()
+        } catch (error) {
+          console.error('Error during authentication:', error)
+          setError('Error al cargar el perfil')
+          setLoading(false)
+        } finally {
+          setIsInitializing(false)
+        }
+      }
     }
+
+    handleAuth()
   }, [status, router])
+
+  // Effect para detectar el parámetro tab en la URL
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['profile', 'projects'].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   // Effect para cerrar el menú móvil al hacer clic fuera de él
   useEffect(() => {
@@ -157,6 +194,7 @@ export default function DashboardPage() {
 
   const fetchUserData = async () => {
     try {
+      setLoading(true)
       const response = await fetch('/api/profile')
       if (response.ok) {
         const data = await response.json()
@@ -174,6 +212,9 @@ export default function DashboardPage() {
           setProfileForm(data.profile)
           setProjects(data.projects || [])
         }
+        
+        // Pequeño delay para asegurar una transición suave
+        await new Promise(resolve => setTimeout(resolve, 300))
       } else {
         setError('Error al cargar los datos del perfil')
       }
@@ -639,12 +680,93 @@ export default function DashboardPage() {
     setImprovedProjectDescription('')
   }
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading' || loading || isInitializing || isRedirecting) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Cargando tu perfil...</p>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-gray-50 flex items-center justify-center relative overflow-hidden">
+        {/* Elementos decorativos de fondo */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-10 left-10 w-20 h-20 bg-orange-200/30 rounded-full blur-xl animate-pulse"></div>
+          <div className="absolute top-32 right-20 w-16 h-16 bg-blue-200/20 rounded-full blur-lg animate-pulse animation-delay-300"></div>
+          <div className="absolute bottom-20 left-1/4 w-24 h-24 bg-purple-200/20 rounded-full blur-xl animate-pulse animation-delay-700"></div>
+          <div className="absolute bottom-32 right-1/3 w-12 h-12 bg-green-200/30 rounded-full blur-lg animate-pulse animation-delay-500"></div>
+        </div>
+
+        <div className="text-center z-10 max-w-md mx-auto px-6">
+          {/* Logo animado */}
+          <div className="relative mb-8">
+            <div className="w-20 h-20 mx-auto bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-2xl transform transition-all duration-500 hover:scale-105 hover:shadow-3xl">
+              <svg className="w-10 h-10 text-white animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 2L3 7v11a1 1 0 001 1h3a1 1 0 001-1v-4h4v4a1 1 0 001 1h3a1 1 0 001-1V7l-7-5z"/>
+              </svg>
+            </div>
+            {/* Anillo de carga alrededor del logo */}
+            <div className="absolute inset-0 w-24 h-24 mx-auto -top-2 -left-2">
+              <div className="w-full h-full border-4 border-orange-200/50 border-t-orange-500 rounded-full animate-spin"></div>
+            </div>
+            {/* Segundo anillo para efecto más dinámico */}
+            <div className="absolute inset-0 w-28 h-28 mx-auto -top-4 -left-4">
+              <div className="w-full h-full border-2 border-orange-300/30 border-b-orange-400 rounded-full animate-spin reverse-spin"></div>
+            </div>
+          </div>
+
+          {/* Título con animación */}
+          <div className="space-y-4 animate-fade-in">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+              DMAS - Perfil Profesional
+            </h1>
+            
+            {/* Mensaje dinámico de carga */}
+            <div className="space-y-3">
+              <p className="text-lg text-gray-600 font-medium">
+                {status === 'loading' && '🔐 Verificando autenticación...'}
+                {status === 'authenticated' && isInitializing && '🚀 Iniciando sesión...'}
+                {status === 'authenticated' && !isInitializing && loading && '👤 Cargando tu perfil...'}
+                {isRedirecting && '🔄 Redirigiendo al login...'}
+              </p>
+              
+              {/* Barra de progreso animada mejorada */}
+              <div className="relative w-full bg-gray-200 rounded-full h-3 mx-auto max-w-xs overflow-hidden shadow-inner">
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 h-full rounded-full transform origin-left animate-pulse"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent h-full rounded-full animate-bounce"></div>
+              </div>
+              
+              {/* Texto adicional */}
+              <p className="text-sm text-gray-500 italic">
+                {isRedirecting ? '🔐 Te llevamos al login' : '✨ Preparando tu experiencia personalizada'}
+              </p>
+            </div>
+          </div>
+
+          {/* Indicadores de carga modernos */}
+          <div className="flex justify-center items-center space-x-3 mt-8">
+            <div className="flex space-x-1">
+              <div className="w-3 h-3 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full animate-bounce shadow-lg"></div>
+              <div className="w-3 h-3 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full animate-bounce shadow-lg" style={{animationDelay: '0.1s'}}></div>
+              <div className="w-3 h-3 bg-gradient-to-r from-orange-600 to-red-500 rounded-full animate-bounce shadow-lg" style={{animationDelay: '0.2s'}}></div>
+            </div>
+          </div>
+
+          {/* Mensaje de espera adicional para casos de carga lenta */}
+          {loading && !isRedirecting && (
+            <div className="mt-6 animate-fade-in">
+              <p className="text-xs text-gray-400">
+                Si esto toma mucho tiempo, verifica tu conexión a internet
+              </p>
+            </div>
+          )}
+
+          {/* Mensaje de error si hay algún problema */}
+          {error && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg animate-fade-in">
+              <p className="text-red-600 text-sm font-medium">⚠️ {error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-2 text-xs text-red-500 hover:text-red-700 underline"
+              >
+                Recargar página
+              </button>
+            </div>
+          )}
         </div>
       </div>
     )

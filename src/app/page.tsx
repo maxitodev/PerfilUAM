@@ -44,6 +44,7 @@ interface StudentProfile {
 }
 
 export default function Home() {
+  const perfilesDisponiblesRef = useRef<HTMLSpanElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [profiles, setProfiles] = useState<StudentProfile[]>([]);
@@ -56,8 +57,12 @@ export default function Home() {
   
   // Estados para paginación
   const [currentPage, setCurrentPage] = useState(1);
-  const [profilesPerPage] = useState(12); // 12 perfiles por página
+  const [profilesPerPage] = useState(4); // 12 perfiles por página
   
+  //Estados de la barra de búsqueda
+  const [showSearchForm, setShowSearchForm] = useState(true);
+const [hasSearched, setHasSearched] = useState(false);
+
   // Calculate currentProfiles here, before any useEffects that depend on it
   const totalPages = Math.ceil(filteredProfiles.length / profilesPerPage);
   const startIndex = (currentPage - 1) * profilesPerPage;
@@ -238,6 +243,7 @@ export default function Home() {
 
   // Function to animate profile cards when filtering/changing page
   // Eliminar animación, solo forzar visibilidad
+
   useEffect(() => {
     if (
       profilesGridRef.current &&
@@ -301,54 +307,82 @@ export default function Home() {
   }, []);
 
   // Función para filtrar perfiles
-  useEffect(() => {
-    let filtered = profiles;
+useEffect(() => {
+  let filtered = profiles;
 
-    if (searchTerm) {
-      filtered = filtered.filter(profile =>
-        profile.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        profile.bio.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        profile.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        profile.projects.some(project => 
-          project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          project.technologies.some(tech => tech.toLowerCase().includes(searchTerm.toLowerCase()))
-        )
-      );
-    }
+  if (searchTerm) {
+    filtered = filtered.filter(profile =>
+      profile.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      profile.bio.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      profile.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      profile.projects.some(project => 
+        project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.technologies.some(tech => tech.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    );
+  }
 
-    if (selectedCarrera) {
-      filtered = filtered.filter(profile => profile.user.carrera === selectedCarrera);
-    }
+  if (selectedCarrera) {
+    filtered = filtered.filter(profile => profile.user.carrera === selectedCarrera);
+  }
 
-    setFilteredProfiles(filtered);
-    setCurrentPage(1); // Resetear a la primera página cuando se filtran los resultados
-  }, [searchTerm, selectedCarrera, profiles]);
+  setFilteredProfiles(filtered);
+  setCurrentPage(1); // Resetear a la primera página cuando se filtran los resultados
+
+  // Solo hacer scroll si hay un término de búsqueda o carrera seleccionada
+  if ((searchTerm && searchTerm.trim() !== '') || selectedCarrera) {
+    setTimeout(() => {
+      if (perfilesDisponiblesRef.current) {
+        perfilesDisponiblesRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
+  }
+}, [searchTerm, selectedCarrera, profiles]);
 
   // Estados para búsqueda inteligente
   const [searchInsights, setSearchInsights] = useState<any>(null);
   const [searchReasoning, setSearchReasoning] = useState<string>("");
 
   // Callback para resultados de búsqueda inteligente
-  const handleIntelligentSearchResults = (
-    filteredProfiles: StudentProfile[],
-    insights: any,
-    reasoning: string
-  ) => {
-    setFilteredProfiles(filteredProfiles);
-    setCurrentPage(1);
-    setSearchInsights(insights);
-    setSearchReasoning(reasoning);
-  };
+const handleIntelligentSearchResults = (
+  filteredProfiles: StudentProfile[],
+  insights: any,
+  reasoning: string
+) => {
+  setFilteredProfiles(filteredProfiles);
+  setCurrentPage(1);
+  setSearchInsights(insights);
+  setSearchReasoning(reasoning);
+  setShowSearchForm(false); // Ocultar el formulario
+  setHasSearched(true); // Marcar que se ha realizado una búsqueda
+  
+  // Scroll automático a los resultados
+  setTimeout(() => {
+    if (perfilesDisponiblesRef.current) {
+      perfilesDisponiblesRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 100);
+};
+
+// Función para mostrar nuevamente el formulario de búsqueda
+const showNewSearchForm = () => {
+  setShowSearchForm(true);
+  setHasSearched(false);
+  // Resetear filtros si es necesario
+  setSearchTerm('');
+  setSelectedCarrera('');
+  setFilteredProfiles(profiles); // Mostrar todos los perfiles
+  setCurrentPage(1);
+};
 
   // Funciones de paginación
-  const goToPage = (page: number) => {
-    setCurrentPage(page);
-    
-    const profilesSection = document.getElementById('profiles-section');
-    if (profilesSection) {
-      profilesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
+const goToPage = (page: number) => {
+  setCurrentPage(page);
+
+  if (perfilesDisponiblesRef.current) {
+    perfilesDisponiblesRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+};
 
   const goToPreviousPage = () => {
     if (currentPage > 1) {
@@ -425,6 +459,7 @@ export default function Home() {
     }
   };
 
+  
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
       {/* Menu Hamburguesa - Esquina superior derecha */}
@@ -623,11 +658,42 @@ export default function Home() {
           </div>
 
           {/* Barra de búsqueda inteligente */}
-          <div ref={searchBarRef} className="mb-10">
-            <IntelligentSearch
-              profiles={profiles}
-              onResults={handleIntelligentSearchResults}
-            />
+              {showSearchForm && (
+  <div ref={searchBarRef} className="mb-10">
+    <IntelligentSearch
+      profiles={profiles}
+      onResults={handleIntelligentSearchResults}
+    />
+  </div>
+)}
+
+{/* Botón "Realizar Nueva Búsqueda" - Solo mostrar si se ha realizado una búsqueda */}
+{hasSearched && !showSearchForm && (
+  <div className="text-center mb-8">
+    <button
+      onClick={showNewSearchForm}
+      className="inline-flex items-center px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+    >
+      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      Realizar Nueva Búsqueda
+    </button>
+  </div>
+)}
+
+          {/* Divider moderno entre búsqueda y perfiles */}
+          <div className="flex items-center justify-center mb-12">
+            <div className="w-full max-w-2xl flex items-center">
+              <div className="flex-1 h-0.5 bg-gradient-to-r from-transparent via-orange-400/60 to-transparent rounded-full" />
+              <div className="mx-4 px-4 py-2 bg-white/80 shadow-md rounded-full border border-orange-100 flex items-center gap-2">
+                <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span ref={perfilesDisponiblesRef} className="text-orange-600 font-semibold text-base tracking-wide">Perfiles Disponibles</span>
+              </div>
+              <div className="flex-1 h-0.5 bg-gradient-to-l from-transparent via-orange-400/60 to-transparent rounded-full" />
+            </div>
           </div>
 
           {/* Grid de perfiles */}
@@ -651,106 +717,125 @@ export default function Home() {
           ) : (
             <>
               {/* Grid de perfiles actuales */}
-              <div ref={profilesGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                {currentProfiles.map((profile, index) => (
-                  <div
-                    key={profile._id}
-                    ref={(el) => {
-                      profileCardsRef.current[index] = el;
-                    }}
-                    className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer group"
-                    onClick={() => openProfileModal(profile)}
-                  >
-                    {/* Header con imagen */}
-                    <div className="relative bg-gradient-to-r from-orange-500 to-orange-600 p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="relative">
-                          <div className="w-16 h-16 rounded-2xl overflow-hidden border-3 border-white shadow-lg">
-                            {profile.user.imageBase64 ? (
-                              <Image
-                                src={profile.user.imageBase64}
-                                alt={profile.user.name}
-                                width={64}
-                                height={64}
-                                className="w-full h-full object-cover"
-                                unoptimized={true}
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-white flex items-center justify-center">
-                                <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                              </div>
+              <div ref={profilesGridRef} className="relative">
+                {/* Grid adaptativo mejorado */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 mb-12">
+                  {currentProfiles.map((profile, index) => (
+                    <div
+                      key={profile._id}
+                      ref={(el) => {
+                        profileCardsRef.current[index] = el;
+                      }}
+                      className="bg-white rounded-2xl sm:rounded-3xl shadow-lg sm:shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl hover:scale-[1.02] sm:hover:scale-105 transition-all duration-300 cursor-pointer group w-full"
+                      onClick={() => openProfileModal(profile)}
+                    >
+                      {/* Header con imagen - Ajustado para móvil */}
+                      <div className="relative bg-gradient-to-r from-orange-500 to-orange-600 p-4 sm:p-6">
+                        <div className="flex items-center space-x-3 sm:space-x-4">
+                          <div className="relative flex-shrink-0">
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl overflow-hidden border-2 sm:border-3 border-white shadow-lg">
+                              {profile.user.imageBase64 ? (
+                                <Image
+                                  src={profile.user.imageBase64}
+                                  alt={profile.user.name}
+                                  width={64}
+                                  height={64}
+                                  className="w-full h-full object-cover"
+                                  unoptimized={true}
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-white flex items-center justify-center">
+                                  <svg className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-6 sm:h-6 bg-green-400 rounded-full border-2 border-white"></div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg sm:text-xl font-bold text-white truncate pr-2">{profile.user.name}</h3>
+                            <p className="text-orange-100 text-xs sm:text-sm truncate">{profile.user.carrera}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Contenido - Optimizado para móvil */}
+                      <div className="p-4 sm:p-6">
+                        {/* Información de contacto */}
+                        <div className="mb-3 sm:mb-4">
+                          <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600">
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <span className="truncate flex-1">{profile.user.email}</span>
+                          </div>
+                        </div>
+
+                        <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2 sm:line-clamp-3 leading-relaxed">
+                          {profile.bio}
+                        </p>
+
+                        {/* Skills - Mejorado para móvil */}
+                        <div className="mb-3 sm:mb-4">
+                          <div className="flex flex-wrap gap-1 sm:gap-2">
+                            {profile.skills.slice(0, 2).map((skill, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium truncate max-w-20 sm:max-w-none"
+                                title={skill}
+                              >
+                                {skill}
+                              </span>
+                            ))}
+                            {profile.skills.length > 2 && (
+                              <span className="px-2 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-medium">
+                                +{profile.skills.length - 2}
+                              </span>
                             )}
                           </div>
-                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-2 border-white"></div>
                         </div>
-                        <div className="flex-1">
-                          <h3 className="text-xl font-bold text-white truncate">{profile.user.name}</h3>
-                          <p className="text-orange-100 text-sm">{profile.user.carrera}</p>
+
+                        {/* Estadísticas - Layout mejorado para móvil */}
+                        <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 space-x-2">
+                          <span className="flex items-center flex-1 min-w-0">
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                            <span className="truncate">{profile.projects.length} proy.</span>
+                          </span>
+                          <span className="flex items-center flex-1 min-w-0">
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span className="truncate">{profile.location}</span>
+                          </span>
                         </div>
+
+                        {/* Botón de acción - Mejorado para móvil */}
+                        <button className="w-full bg-gray-900 hover:bg-orange-600 text-white font-semibold py-2.5 sm:py-3 rounded-xl sm:rounded-2xl transition-all duration-300 group-hover:bg-orange-600 text-sm sm:text-base">
+                          Ver perfil completo
+                        </button>
                       </div>
                     </div>
+                  ))}
+                </div>
 
-                    {/* Contenido */}
-                    <div className="p-6">
-                      {/* Información de contacto */}
-                      <div className="mb-4">
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                          </svg>
-                          <span className="truncate">{profile.user.email}</span>
-                        </div>
-                      </div>
-
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                        {profile.bio}
-                      </p>
-
-                      {/* Skills */}
-                      <div className="mb-4">
-                        <div className="flex flex-wrap gap-2">
-                          {profile.skills.slice(0, 3).map((skill, index) => (
-                            <span
-                              key={index}
-                              className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                          {profile.skills.length > 3 && (
-                            <span className="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-medium">
-                              +{profile.skills.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Estadísticas */}
-                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                        <span className="flex items-center">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                          </svg>
-                          {profile.projects.length} proyectos
-                        </span>
-                        <span className="flex items-center">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          {profile.location}
-                        </span>
-                      </div>
-
-                      {/* Botón de acción */}
-                      <button className="w-full bg-gray-900 hover:bg-orange-600 text-white font-semibold py-3 rounded-2xl transition-all duration-300 group-hover:bg-orange-600">
-                        Ver perfil completo
-                      </button>
+                {/* Indicador de swipe para móviles cuando hay muchos perfiles */}
+                {filteredProfiles.length > 4 && (
+                  <div className="flex sm:hidden items-center justify-center mt-6 mb-4">
+                    <div className="flex items-center space-x-2 text-xs text-gray-500 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-full border border-gray-200">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+                      </svg>
+                      <span>Desliza para ver más perfiles</span>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
 
               {/* Paginación */}
