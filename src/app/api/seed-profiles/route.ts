@@ -163,33 +163,34 @@ export async function POST(request: Request) {
   try {
     await connectDB()
     
-    // Check if profiles already exist
+    // Check existing profiles for informational purposes
     const existingUsers = await User.countDocuments()
     const existingProfiles = await Profile.countDocuments()
     const existingProjects = await Project.countDocuments()
     
-    if (existingUsers > 0) {
-      return NextResponse.json(
-        { 
-          message: 'La base de datos ya contiene perfiles',
-          existing: {
-            users: existingUsers,
-            profiles: existingProfiles,
-            projects: existingProjects
-          },
-          suggestion: 'Usa el endpoint DELETE /api/clear-profiles para limpiar la base de datos primero'
-        },
-        { status: 400 }
-      )
-    }
+    console.log(`Base de datos actual: ${existingUsers} usuarios, ${existingProfiles} perfiles, ${existingProjects} proyectos`)
+    
+    // Get existing matriculas to avoid duplicates
+    const existingMatriculas = await User.distinct('matricula')
+    const existingEmails = await User.distinct('email')
+    
+    console.log(`Matrículas existentes: ${existingMatriculas.length}, Emails existentes: ${existingEmails.length}`)
 
     const createdProfiles = []
+    let skippedCount = 0
 
     for (let i = 0; i < 40; i++) {
       const nombre = nombres[i]
       const carrera = carreras[Math.floor(Math.random() * carreras.length)]
-      // Generar matrícula with exactly 10 digits: 2181 + 6 digits
-      const matricula = `2181${String(100000 + i).padStart(6, '0')}`
+      
+      // Generate unique matricula starting from existing count
+      let matricula: string
+      let attemptCount = 0
+      do {
+        const baseNumber = existingUsers + i + attemptCount + 100000
+        matricula = `2181${String(baseNumber).padStart(6, '0')}`
+        attemptCount++
+      } while (existingMatriculas.includes(matricula) && attemptCount < 100)
       
       // Generar email más limpio
       const emailName = nombre
@@ -204,6 +205,17 @@ export async function POST(request: Request) {
         .replace(/[^a-z.]/g, '') // Remover cualquier caracter especial
       
       const email = `${emailName}@cua.uam.mx`
+      
+      // Skip if email already exists
+      if (existingEmails.includes(email)) {
+        console.log(`Skipping ${nombre} - email already exists: ${email}`)
+        skippedCount++
+        continue
+      }
+      
+      // Add to existing arrays to prevent duplicates in this batch
+      existingMatriculas.push(matricula)
+      existingEmails.push(email)
 
       // Get anime avatar with retry logic
       let imageBase64 = generateRandomAvatar(); // Default fallback
@@ -296,8 +308,10 @@ export async function POST(request: Request) {
         message: `${createdProfiles.length} perfiles creados exitosamente con imágenes de anime`,
         profiles: createdProfiles,
         summary: {
-          totalUsers: createdProfiles.length,
-          totalProjects: createdProfiles.reduce((sum, p) => sum + p.projectsCount, 0),
+          totalUsersCreated: createdProfiles.length,
+          totalUsersInDB: existingUsers + createdProfiles.length,
+          totalProjectsCreated: createdProfiles.reduce((sum, p) => sum + p.projectsCount, 0),
+          skippedDuplicates: skippedCount,
           withImages: createdProfiles.length
         }
       },
