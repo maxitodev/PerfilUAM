@@ -17,9 +17,11 @@ const ProfileSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator: function(v: string) {
-        return /^(0[1-9]|1[0-2])$/.test(v) || /^[1-9]$/.test(v);
+        // Acepta trimestres del 1 al 12 o valores especiales
+        const validSpecialValues = ['Egresado', 'Docente', 'Investigador', 'Administrativo', 'Otro'];
+        return /^(0[1-9]|1[0-2])$/.test(v) || /^[1-9]$/.test(v) || validSpecialValues.includes(v);
       },
-      message: 'El trimestre debe ser un número del 1 al 12'
+      message: 'Selecciona un trimestre válido o un tipo de perfil'
     }
   },
   location: { 

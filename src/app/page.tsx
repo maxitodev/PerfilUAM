@@ -1116,8 +1116,8 @@ const goToPage = (page: number) => {
                       <span className="text-gray-900 text-sm">{selectedProfile.user.email}</span>
                     </div>
                     <div className="flex items-center">
-                      <span className="text-gray-600 font-medium w-24">Trimestre:</span>
-                      <span className="text-gray-900">{selectedProfile.trimestre}°</span>
+                      <span className="text-gray-600 font-medium w-24">{isNaN(Number(selectedProfile.trimestre)) ? 'Perfil:' : 'Trimestre:'}</span>
+                      <span className="text-gray-900">{isNaN(Number(selectedProfile.trimestre)) ? selectedProfile.trimestre : `${selectedProfile.trimestre}°`}</span>
                     </div>
                     <div className="flex items-center">
                       <span className="text-gray-600 font-medium w-24">División:</span>

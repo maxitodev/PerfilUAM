@@ -1479,7 +1479,7 @@ export default function DashboardPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Trimestre Actual</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Trimestre / Perfil</label>
                       <select
                         value={profileForm.trimestre}
                         onChange={(e) => setProfileForm(prev => ({ ...prev, trimestre: e.target.value }))
@@ -1487,10 +1487,19 @@ export default function DashboardPage() {
                         className="w-full px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-300 rounded-xl text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-sm sm:text-base"
                         required
                       >
-                        <option value="" className="text-gray-500">Selecciona tu trimestre</option>
-                        {[...Array(12)].map((_, i) => (
-                          <option key={i + 1} value={i + 1} className="text-gray-900">{i + 1}° Trimestre</option>
-                        ))}
+                        <option value="" className="text-gray-500">Selecciona tu trimestre o perfil</option>
+                        <optgroup label="Estudiante activo">
+                          {[...Array(12)].map((_, i) => (
+                            <option key={i + 1} value={i + 1} className="text-gray-900">{i + 1}° Trimestre</option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="Otros perfiles">
+                          <option value="Egresado" className="text-gray-900">Egresado</option>
+                          <option value="Docente" className="text-gray-900">Docente</option>
+                          <option value="Investigador" className="text-gray-900">Investigador</option>
+                          <option value="Administrativo" className="text-gray-900">Administrativo</option>
+                          <option value="Otro" className="text-gray-900">Otro</option>
+                        </optgroup>
                       </select>
                     </div>
                   </div>
